@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RK Tactical Relay</title>
+<meta name="description" content="Live pilots on the RK Tactical Relay for MSFS. See who is flying and how to join.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2337df71' d='M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#0a1018;--panel:#121b27;--panel2:#182435;--line:#26364a;--text:#e8eef6;--mute:#8da2b6;--green:#37df71;--cyan:#4cc9f0;--amber:#ffb703;--pink:#ff5d8f;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:Inter,"Segoe UI",system-ui,sans-serif;background:radial-gradient(1200px 600px at 80% -10%,#15304a55,transparent),radial-gradient(900px 500px at -10% 10%,#1d3a2d44,transparent),var(--bg);color:var(--text);min-height:100vh}
+main{max-width:1240px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#1c3b2c,#12304a);display:grid;place-items:center;border:1px solid var(--line)}
+.logo svg{width:24px;height:24px;fill:var(--green);transform:rotate(45deg)}
+h1{font-size:20px;margin:0;letter-spacing:.2px}
+.sub{color:var(--mute);font-size:13px}
+.live{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:13px;font-weight:600}
+.dot{width:10px;height:10px;border-radius:50%;background:#52606f}
+.live.on .dot{background:var(--green);box-shadow:0 0 0 0 #37df7188;animation:pulse 1.8s infinite}
+.live.off .dot{background:var(--pink)}
+@keyframes pulse{70%{box-shadow:0 0 0 10px #37df7100}100%{box-shadow:0 0 0 0 #37df7100}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.k{font-size:11px;letter-spacing:1.4px;color:var(--mute);text-transform:uppercase}
+.v{font-size:30px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+.v small{font-size:14px;font-weight:600;color:var(--mute);margin-left:4px}
+.join{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.url{display:flex;gap:8px;align-items:center;flex:1;min-width:260px}
+code{flex:1;background:#0a121b;border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:#b6e3ff;font-size:14px;overflow:auto;white-space:nowrap}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 16px;font-weight:700;background:var(--green);color:#052512;transition:transform .08s,filter .15s}
+button:hover{filter:brightness(1.08)}button:active{transform:scale(.97)}
+button.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+.steps{display:flex;flex-wrap:wrap;gap:8px 22px;color:var(--mute);font-size:13px;margin-top:10px}
+.steps b{color:var(--cyan)}
+.layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:14px;margin-top:14px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+#map{height:560px;border-radius:14px;border:1px solid var(--line);background:#0c1520;overflow:hidden}
+@media(max-width:900px){#map{height:380px}}
+.list{display:flex;flex-direction:column;max-height:560px}
+.list input{width:100%;background:#0a121b;border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font:inherit;margin-bottom:10px}
+.rows{overflow:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px}
+.pilot{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;background:#0e1824;border:1px solid var(--line);cursor:pointer;transition:border-color .15s,transform .1s}
+.pilot:hover{border-color:var(--cyan);transform:translateX(2px)}
+.badge{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#06131f}
+.pname{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmeta{color:var(--mute);font-size:12px;margin-top:2px}
+.nums{text-align:right;font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+.nums b{display:block;color:var(--text);font-size:14px}
+.arrow{display:inline-block;transition:transform .6s}
+.empty{text-align:center;padding:40px 16px;color:var(--mute)}
+.empty .big{font-size:42px;display:block;margin-bottom:6px;animation:float 3s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-6px) rotate(3deg)}}
+.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.82) contrast(.9) saturate(.55)}
+.plane{filter:drop-shadow(0 0 5px #000)}
+.plane svg{width:26px;height:26px;transition:transform .8s linear}
+.leaflet-container{font:inherit;background:#0c1520}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--text);border:1px solid var(--line)}
+footer{margin-top:22px;color:var(--mute);font-size:12px;text-align:center;line-height:1.7}
+.err{color:var(--pink)}
+</style>
+</head>
+<body>
+<main>
+<header>
+ <div class="brand">
+  <div class="logo"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg></div>
+  <div><h1>RK Tactical Relay</h1><div class="sub">Live multiplayer for MSFS 2020 and 2024</div></div>
+ </div>
+ <div id="live" class="live"><span class="dot"></span><span id="livetext">Connecting</span></div>
+</header>
+
+<section class="stats">
+ <div class="card"><div class="k">Pilots flying</div><div class="v" id="s-online">0</div></div>
+ <div class="card"><div class="k">Highest</div><div class="v" id="s-alt">0<small>ft</small></div></div>
+ <div class="card"><div class="k">Fastest</div><div class="v" id="s-speed">0<small>kts</small></div></div>
+ <div class="card"><div class="k">Server up</div><div class="v" id="s-up">0<small>m</small></div></div>
+</section>
+
+<section class="card">
+ <div class="join">
+  <div><div class="k">Join this server</div><div class="sub" style="margin-top:2px">One worldwide room. Everyone connected sees each other.</div></div>
+  <div class="url"><code id="url">ws://</code><button id="copy">Copy</button></div>
+ </div>
+ <div class="steps"><span><b>1</b> Open the RK Tactical Companion</span><span><b>2</b> Paste the address as <i>relay_url</i></span><span><b>3</b> Start your flight</span></div>
+</section>
+
+<section class="layout">
+ <div id="map"></div>
+ <div class="card list">
+  <div class="k" style="margin-bottom:8px">Pilots</div>
+  <input id="filter" type="search" placeholder="Search pilot or aircraft" autocomplete="off">
+  <div class="rows" id="rows"></div>
+ </div>
+</section>
+
+<footer>
+ Positions are rounded to about a kilometre and altitudes to the nearest 100 feet. Pilots appear while their Companion is connected.<br>
+ Map data by OpenStreetMap contributors.
+</footer>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+var $=function(id){return document.getElementById(id)};
+var wsUrl='ws://'+location.hostname+':8787';
+$('url').textContent=wsUrl;
+$('copy').addEventListener('click',function(){
+ var b=this;
+ var done=function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1500)};
+ if(navigator.clipboard){navigator.clipboard.writeText(wsUrl).then(done,function(){})}
+});
+
+var planeSvg=function(color){return '<svg viewBox="0 0 24 24" fill="'+color+'" stroke="#06131f" stroke-width="1"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" transform="rotate(0 12 12)"/></svg>'};
+var palette=['#37df71','#4cc9f0','#ffb703','#ff5d8f','#b794f6','#ff8a3d','#5eead4','#f472b6'];
+var colorFor=function(name){var h=0;for(var i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))>>>0;return palette[h%palette.length]};
+
+var map=L.map('map',{worldCopyJump:true,minZoom:2,zoomControl:true}).setView([30,-30],2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'',subdomains:'abc',maxZoom:12}).addTo(map);
+var markers={};
+var fitted=false;
+var pilots=[];
+
+function icon(p){
+ var c=colorFor(p.name);
+ var el=L.divIcon({className:'plane',html:planeSvg(c),iconSize:[26,26],iconAnchor:[13,13]});
+ return el;
+}
+
+function fmtTime(s){
+ if(s<60)return s+'s';
+ if(s<3600)return Math.floor(s/60)+'m';
+ return Math.floor(s/3600)+'h '+Math.floor(s%3600/60)+'m';
+}
+function fmtUp(s){
+ if(s<3600)return Math.floor(s/60)+'<small>m</small>';
+ if(s<86400)return (s/3600).toFixed(1)+'<small>h</small>';
+ return (s/86400).toFixed(1)+'<small>d</small>';
+}
+function num(n){return n.toLocaleString('en-US')}
+
+function renderMap(list){
+ var seen={};
+ list.forEach(function(p){
+  var key=p.name+'|'+p.aircraft;
+  seen[key]=true;
+  var m=markers[key];
+  if(!m){
+   m=L.marker([p.lat,p.lon],{icon:icon(p),title:p.name}).addTo(map);
+   m.bindPopup('');
+   markers[key]=m;
+  }
+  m.setLatLng([p.lat,p.lon]);
+  var svg=m.getElement()&&m.getElement().querySelector('svg');
+  if(svg)svg.style.transform='rotate('+p.heading+'deg)';
+  var pop=m.getPopup();
+  var d=document.createElement('div');
+  var b=document.createElement('b');b.textContent=p.name;
+  d.appendChild(b);d.appendChild(document.createElement('br'));
+  d.appendChild(document.createTextNode((p.aircraft||'Unknown aircraft')+' · '+num(p.alt_ft)+' ft · '+p.speed_kts+' kts'));
+  pop.setContent(d);
+ });
+ Object.keys(markers).forEach(function(k){
+  if(!seen[k]){map.removeLayer(markers[k]);delete markers[k]}
+ });
+ if(!fitted&&list.length){
+  fitted=true;
+  var pts=list.map(function(p){return [p.lat,p.lon]});
+  if(pts.length===1)map.setView(pts[0],6);else map.fitBounds(pts,{padding:[50,50],maxZoom:7});
+ }
+}
+
+function renderList(){
+ var q=$('filter').value.trim().toLowerCase();
+ var rows=$('rows');
+ rows.replaceChildren();
+ var shown=pilots.filter(function(p){return !q||p.name.toLowerCase().indexOf(q)>=0||(p.aircraft||'').toLowerCase().indexOf(q)>=0});
+ if(!shown.length){
+  var e=document.createElement('div');e.className='empty';
+  var big=document.createElement('span');big.className='big';big.textContent=pilots.length?'🔎':'🛫';
+  e.appendChild(big);
+  e.appendChild(document.createTextNode(pilots.length?'No pilots match that search.':'The sky is empty. Be the first to take off.'));
+  rows.appendChild(e);return;
+ }
+ shown.forEach(function(p){
+  var r=document.createElement('div');r.className='pilot';
+  var badge=document.createElement('div');badge.className='badge';badge.style.background=colorFor(p.name);
+  badge.textContent=(p.name.trim().charAt(0)||'?').toUpperCase();
+  var mid=document.createElement('div');
+  var n=document.createElement('div');n.className='pname';n.textContent=p.name;
+  var m=document.createElement('div');m.className='pmeta';
+  var ar=document.createElement('span');ar.className='arrow';ar.textContent='➤';ar.style.transform='rotate('+(p.heading-90)+'deg)';
+  m.appendChild(ar);
+  m.appendChild(document.createTextNode(' '+(p.aircraft||'Unknown aircraft')+' · '+fmtTime(p.online_seconds)));
+  mid.appendChild(n);mid.appendChild(m);
+  var nums=document.createElement('div');nums.className='nums';
+  var a=document.createElement('b');a.textContent=num(p.alt_ft)+' ft';
+  nums.appendChild(a);nums.appendChild(document.createTextNode(p.speed_kts+' kts'));
+  r.appendChild(badge);r.appendChild(mid);r.appendChild(nums);
+  r.addEventListener('click',function(){
+   map.flyTo([p.lat,p.lon],Math.max(map.getZoom(),7),{duration:1.2});
+   var mk=markers[p.name+'|'+p.aircraft];if(mk)mk.openPopup();
+  });
+  rows.appendChild(r);
+ });
+}
+
+function setLive(state,text){
+ var l=$('live');l.className='live '+state;$('livetext').textContent=text;
+}
+
+function tick(){
+ fetch('/api/public',{cache:'no-store'}).then(function(r){
+  if(!r.ok)throw new Error('status '+r.status);
+  return r.json();
+ }).then(function(d){
+  pilots=d.pilots||[];
+  setLive(d.online>0?'on':'',d.online>0?d.online+(d.online===1?' pilot':' pilots')+' online':'Server online · waiting for pilots');
+  $('s-online').textContent=d.online;
+  $('s-alt').innerHTML=num(pilots.reduce(function(a,p){return Math.max(a,p.alt_ft)},0))+'<small>ft</small>';
+  $('s-speed').innerHTML=num(pilots.reduce(function(a,p){return Math.max(a,p.speed_kts)},0))+'<small>kts</small>';
+  $('s-up').innerHTML=fmtUp(d.uptime_seconds);
+  renderMap(pilots);renderList();
+ }).catch(function(){
+  setLive('off','Server list unavailable');
+ });
+}
+$('filter').addEventListener('input',renderList);
+tick();setInterval(tick,3000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)tick()});
+})();
+</script>
+</body>
+</html>

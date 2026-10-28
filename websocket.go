@@ -7,6 +7,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/binary"
@@ -34,6 +35,50 @@ type webSocket struct {
 	reader *bufio.Reader
 	sendMu sync.Mutex
 	once   sync.Once
+	done   chan struct{}
+	client bool
+	limit  int
+}
+
+func (ws *webSocket) maxLen() int {
+	if ws.limit > 0 {
+		return ws.limit
+	}
+	return maxMessage
+}
+
+func dialWS(addr, path string, header http.Header, timeout time.Duration) (*webSocket, error) {
+	conn, err := net.DialTimeout("tcp", addr, timeout)
+	if err != nil {
+		return nil, err
+	}
+	_ = conn.SetDeadline(time.Now().Add(timeout))
+	var raw [16]byte
+	_, _ = rand.Read(raw[:])
+	key := base64.StdEncoding.EncodeToString(raw[:])
+	var req strings.Builder
+	fmt.Fprintf(&req, "GET %s HTTP/1.1\r\nHost: %s\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: %s\r\nSec-WebSocket-Version: 13\r\n", path, addr, key)
+	for k, v := range header {
+		fmt.Fprintf(&req, "%s: %s\r\n", k, v[0])
+	}
+	req.WriteString("\r\n")
+	if _, err := conn.Write([]byte(req.String())); err != nil {
+		conn.Close()
+		return nil, err
+	}
+	reader := bufio.NewReader(conn)
+	resp, err := http.ReadResponse(reader, nil)
+	if err != nil {
+		conn.Close()
+		return nil, err
+	}
+	sum := sha1.Sum([]byte(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
+	if resp.StatusCode != http.StatusSwitchingProtocols || resp.Header.Get("Sec-WebSocket-Accept") != base64.StdEncoding.EncodeToString(sum[:]) {
+		conn.Close()
+		return nil, errors.New("websocket upgrade refused")
+	}
+	_ = conn.SetDeadline(time.Time{})
+	return &webSocket{conn: conn, reader: reader, done: make(chan struct{}), client: true, limit: peerMaxMessage}, nil
 }
 
 func containsToken(header, token string) bool {
@@ -77,42 +122,48 @@ func upgradeWS(w http.ResponseWriter, r *http.Request) (*webSocket, error) {
 		conn.Close()
 		return nil, err
 	}
-	return &webSocket{conn: conn, reader: rw.Reader}, nil
+	return &webSocket{conn: conn, reader: rw.Reader, done: make(chan struct{})}, nil
 }
 
-func (ws *webSocket) close() { ws.once.Do(func() { _ = ws.conn.Close() }) }
+func (ws *webSocket) close() {
+	ws.once.Do(func() {
+		close(ws.done)
+		_ = ws.conn.Close()
+	})
+}
 
 func (ws *webSocket) writeFrame(op byte, data []byte) error {
 	ws.sendMu.Lock()
 	defer ws.sendMu.Unlock()
-	if len(data) > 65535 && op != wsBinary {
-		return errors.New("outbound frame too large")
-	}
 	_ = ws.conn.SetWriteDeadline(time.Now().Add(3 * time.Second))
-	hdr := []byte{0x80 | op, 0}
 	n := len(data)
+	var maskBit byte
+	if ws.client {
+		maskBit = 0x80
+	}
+	frame := make([]byte, 0, n+14)
+	frame = append(frame, 0x80|op)
 	switch {
 	case n < 126:
-		hdr[1] = byte(n)
+		frame = append(frame, maskBit|byte(n))
 	case n <= 65535:
-		hdr[1] = 126
-		tmp := make([]byte, 2)
-		binary.BigEndian.PutUint16(tmp, uint16(n))
-		hdr = append(hdr, tmp...)
+		frame = append(frame, maskBit|126, byte(n>>8), byte(n))
 	default:
-		hdr[1] = 127
-		tmp := make([]byte, 8)
-		binary.BigEndian.PutUint64(tmp, uint64(n))
-		hdr = append(hdr, tmp...)
+		frame = append(frame, maskBit|127)
+		frame = binary.BigEndian.AppendUint64(frame, uint64(n))
 	}
-	if _, err := ws.conn.Write(hdr); err != nil {
-		return err
+	if ws.client {
+		var mask [4]byte
+		_, _ = rand.Read(mask[:])
+		frame = append(frame, mask[:]...)
+		for i, b := range data {
+			frame = append(frame, b^mask[i&3])
+		}
+	} else {
+		frame = append(frame, data...)
 	}
-	if n > 0 {
-		_, err := ws.conn.Write(data)
-		return err
-	}
-	return nil
+	_, err := ws.conn.Write(frame)
+	return err
 }
 
 func (ws *webSocket) closeWith(code uint16, reason string) {
@@ -137,8 +188,8 @@ func (ws *webSocket) readFrame() (byte, []byte, error) {
 	opcode := hdr[0] & 0x0f
 	fin := hdr[0]&0x80 != 0
 	masked := hdr[1]&0x80 != 0
-	if !masked {
-		return 0, nil, errors.New("unmasked client websocket frame")
+	if masked == ws.client {
+		return 0, nil, errors.New("invalid websocket frame masking")
 	}
 	length := uint64(hdr[1] & 0x7f)
 	if length == 126 {
@@ -160,19 +211,23 @@ func (ws *webSocket) readFrame() (byte, []byte, error) {
 	if opcode >= 8 && (!fin || length > 125) {
 		return 0, nil, errors.New("invalid control frame")
 	}
-	if length > maxMessage {
-		return 0, nil, errors.New("websocket message exceeds 16K limit")
+	if length > uint64(ws.maxLen()) {
+		return 0, nil, errors.New("websocket message exceeds size limit")
 	}
 	var mask [4]byte
-	if _, err := io.ReadFull(ws.reader, mask[:]); err != nil {
-		return 0, nil, err
+	if masked {
+		if _, err := io.ReadFull(ws.reader, mask[:]); err != nil {
+			return 0, nil, err
+		}
 	}
 	data := make([]byte, int(length))
 	if _, err := io.ReadFull(ws.reader, data); err != nil {
 		return 0, nil, err
 	}
-	for i := range data {
-		data[i] ^= mask[i&3]
+	if masked {
+		for i := range data {
+			data[i] ^= mask[i&3]
+		}
 	}
 	if !fin {
 		opcode |= 0x80
@@ -201,6 +256,11 @@ func (ws *webSocket) readMessage(onPong func()) (byte, []byte, error) {
 			onPong()
 			continue
 		case wsClose:
+			code := uint16(1000)
+			if len(frag) >= 2 {
+				code = binary.BigEndian.Uint16(frag)
+			}
+			ws.closeWith(code, "")
 			return 0, nil, io.EOF
 		case wsText, wsBinary:
 			if messageType != 0 {
@@ -214,7 +274,7 @@ func (ws *webSocket) readMessage(onPong func()) (byte, []byte, error) {
 		default:
 			return 0, nil, errors.New("invalid opcode")
 		}
-		if len(data)+len(frag) > maxMessage {
+		if len(data)+len(frag) > ws.maxLen() {
 			return 0, nil, errors.New("websocket message too large")
 		}
 		data = append(data, frag...)

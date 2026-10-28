@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rk-relay
+spec:
+  podSelector:
+    matchLabels:
+      app: rk-relay
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 8787
+    - from:
+        - podSelector:
+            matchLabels:
+              app: rk-relay
+      ports:
+        - port: 8788

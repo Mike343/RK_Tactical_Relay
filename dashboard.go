@@ -23,6 +23,7 @@ type dashboardStats struct {
 	Network         string            `json:"network"`
 	Protocol        uint32            `json:"protocol"`
 	Players         int               `json:"players"`
+	Peers           int               `json:"peers"`
 	RemoteConfirmed bool              `json:"remote_confirmed"`
 	UptimeSec       int64             `json:"uptime_seconds"`
 	MemoryMiB       float64           `json:"memory_mib"`
@@ -37,15 +38,15 @@ type dashboardStats struct {
 }
 
 func (s *relayServer) stats() dashboardStats {
-	s.mu.RLock()
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
+	s.mu.RLock()
 	out := dashboardStats{
-		Version: versionLabel, Network: globalNetwork, Protocol: protocol, Players: len(s.clients), RemoteConfirmed: s.remotelyConfirmed,
+		Version: versionLabel, Network: globalNetwork, Protocol: protocol, Players: len(s.clients), Peers: len(s.peers), RemoteConfirmed: s.remotelyConfirmed,
 		UptimeSec: int64(time.Since(s.started).Seconds()), MemoryMiB: float64(m.Alloc) / 1024 / 1024, Goroutines: runtime.NumGoroutine(),
 		LoadNote:    "Goroutines and Go heap shown; no CPU utilization sampling",
 		ServerLocal: fmt.Sprintf("relay_url=ws://127.0.0.1:%d", s.cfg.Port),
-		Counters:    s.counts, Clients: make([]dashboardPlayer, 0, len(s.clients)), Logs: append([]string(nil), s.logLines...),
+		Counters:    s.counts.load(), Clients: make([]dashboardPlayer, 0, len(s.clients)), Logs: append([]string(nil), s.logLines[max(0, len(s.logLines)-maxLogLines):]...),
 	}
 	if s.lanIP != "" {
 		out.ServerLAN = fmt.Sprintf("relay_url=ws://%s:%d", s.lanIP, s.cfg.Port)
@@ -127,7 +128,7 @@ async function refresh(){
  put('remote',d.remote_confirmed?'REMOTE CONNECTION CONFIRMED':'AWAITING REMOTE CONNECTION');
  put('combat',d.counters.Combat);put('uptime',d.uptime_seconds+'s');
  put('local',d.server_local);put('lan',d.server_lan||'not detected');put('internet',d.server_internet||'not detected');
- const c=d.counters;put('traffic','Received '+c.BytesIn+' bytes | Sent '+c.BytesOut+' bytes | Snapshots '+c.Snapshot+' | Combat relays '+c.CombatDelivered+' | Rejected combat events '+c.CombatRejected+' | Go heap '+d.memory_mib.toFixed(1)+' MiB | Goroutines '+d.goroutines);
+ const c=d.counters;put('traffic','Received '+c.BytesIn+' bytes | Sent '+c.BytesOut+' bytes | Snapshots '+c.Snapshot+' | Combat relays '+c.CombatDelivered+' | Rejected combat events '+c.CombatRejected+' | Peers '+d.peers+' | Go heap '+d.memory_mib.toFixed(1)+' MiB | Goroutines '+d.goroutines);
  const tb=byId('pilotrows');tb.replaceChildren();for(const p of d.clients){const row=document.createElement('tr');for(const text of [p.name,p.aircraft||'(awaiting aircraft state)',p.address,p.connected]){const col=document.createElement('td');col.textContent=text;row.appendChild(col)}tb.appendChild(row)}
  put('logs',d.logs.slice(-55).join('\n'));
  }catch(e){put('status','DASHBOARD DISCONNECTED');byId('light').classList.remove('on')}
