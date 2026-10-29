@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 namespace rk {
@@ -27,6 +28,27 @@ std::wstring readIni(const std::filesystem::path& path,
         value.data(), static_cast<DWORD>(value.size()), pathText.c_str());
     value.resize(length);
     return value;
+}
+
+std::wstring trim(const std::wstring& value) {
+    const auto first = value.find_first_not_of(L" \t\r\n");
+    if (first == std::wstring::npos) { return {}; }
+    const auto last = value.find_last_not_of(L" \t\r\n");
+    return value.substr(first, last - first + 1);
+}
+
+bool validRelayUrl(const std::wstring& url) {
+    return url.rfind(L"ws://", 0) == 0 || url.rfind(L"wss://", 0) == 0;
+}
+
+std::wstring cleanPlayerId(const std::wstring& value) {
+    std::wstring result;
+    for (const wchar_t c : value) {
+        const bool allowed = (c >= L'A' && c <= L'Z') || (c >= L'a' && c <= L'z')
+            || (c >= L'0' && c <= L'9') || c == L'_' || c == L'-' || c == L'.';
+        if (allowed && result.size() < 64) { result.push_back(c); }
+    }
+    return result;
 }
 
 float parseVolume(const std::wstring& value, float fallback) {
@@ -71,14 +93,21 @@ CompanionConfig loadConfig() {
     CompanionConfig config;
     config.executableDirectory = executableDirectory();
     const auto ini = config.executableDirectory / L"companion.ini";
-    config.displayName = readIni(ini, L"display_name", L"RK Pilot");
-    config.relayUrl = readIni(ini, L"relay_url", L"");
+    config.displayName = trim(readIni(ini, L"display_name", L"RK Pilot"));
+    if (config.displayName.empty()) { config.displayName = L"RK Pilot"; }
+    if (config.displayName.size() > 40) { config.displayName.resize(40); }
+    config.relayUrl = trim(readIni(ini, L"relay_url", L""));
+    if (!config.relayUrl.empty() && !validRelayUrl(config.relayUrl)) {
+        std::wcerr << L"relay_url must start with ws:// or wss://, so multiplayer is off: "
+            << config.relayUrl << L"\n";
+        config.relayUrl.clear();
+    }
     config.launchVolume = parseVolume(
         readIni(ini, L"launch_volume", L"1.0"), 1.0f);
     config.activeVolume = parseVolume(
         readIni(ini, L"active_volume", L"0.85"), 0.85f);
     config.playerId = loadOrCreatePlayerId(config.executableDirectory,
-        readIni(ini, L"player_id", L""));
+        cleanPlayerId(readIni(ini, L"player_id", L"")));
     config.launchSoundPath = config.executableDirectory
         / L"Audio" / L"enemy_missile_launch.wav";
     config.activeSoundPath = config.executableDirectory

@@ -20,7 +20,7 @@ It isn't the original August 25 source and it isn't proven to be byte for byte i
 - `dashboard.go`: the local only `/dashboard` and `/api/stats`.
 - `resilience.go`: panic recovery, connection limits, readiness and draining.
 - `web/` and `Dockerfile.web`: the server browser page and its nginx image.
-- `companion/`: the Windows Companion app.
+- `companion/`: the Windows Companion app. `companion/tests/` has a network test that runs two Companions against a relay.
 - `Dockerfile`, `deploy/k8s/`, `deploy.ps1` and `RUNBOOK.md`: containers, Kubernetes and deployment.
 - `reference/`: the original Node servers and the Companion header. I keep them for auditing and they aren't needed to build.
 - Tests are `*_test.go`, plus an optional `integration_test.py` that drives two Companions over real sockets.

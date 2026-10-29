@@ -83,3 +83,12 @@ multiplayer tracks successfully published into SimConnect.
 For Internet use, the package publisher hosts the RelayServer once and embeds
 its `wss://` address in every distributed companion. Individual players do not
 run a relay or choose a room.
+
+## Changes in 1.5.1
+
+- Sending and receiving run on separate threads. Combat events leave within a few milliseconds instead of waiting for the next incoming message, and your position goes out at a steady 10 Hz.
+- Reconnects back off from 1 to 30 seconds with some jitter, so a relay restart isn't hit by every Companion at once. A silent connection is dropped after 15 seconds and reconnected.
+- Snapshots from the relay are validated. Contacts with impossible positions are dropped and their names are always terminated. Combat events are range checked before they reach the simulator.
+- `relay_url` must start with `ws://` or `wss://`. Names are trimmed and capped, and a `player_id` that the relay would refuse is cleaned.
+
+`tests/Run-NetSmoke.ps1` builds a small test that starts two clients against a relay, checks that they see each other and that a launch crosses, and with `-Reconnect` checks recovery after you restart the relay. It needs a relay on `ws://127.0.0.1:18787` by default.

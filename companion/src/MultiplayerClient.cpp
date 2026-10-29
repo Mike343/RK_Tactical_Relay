@@ -6,7 +6,9 @@
 #include <windows.h>
 #include <winhttp.h>
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <iomanip>
@@ -145,46 +147,128 @@ bool MultiplayerClient::consumeCombatEvent(
     return true;
 }
 
+namespace {
+
+constexpr long long kLivenessMs = 15000;
+constexpr std::size_t kMaxTextMessage = 262144;
+
+long long nowMs() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+bool finiteIn(double value, double low, double high) {
+    return std::isfinite(value) && value >= low && value <= high;
+}
+
+bool cleanSnapshot(MultiplayerSnapshotV1& snapshot) {
+    if (snapshot.magic != kMultiplayerMagic
+        || snapshot.protocolVersion != kMultiplayerVersion
+        || snapshot.messageSize != sizeof(MultiplayerSnapshotV1)
+        || snapshot.contactCount > kMaxMultiplayerContacts) {
+        return false;
+    }
+    std::uint32_t kept = 0;
+    for (std::uint32_t i = 0; i < snapshot.contactCount; ++i) {
+        MultiplayerContactV1 contact = snapshot.contacts[i];
+        if (!finiteIn(contact.latitude, -90.0, 90.0)
+            || !finiteIn(contact.longitude, -180.0, 180.0)
+            || !finiteIn(contact.altitudeFt, -2000.0, 200000.0)
+            || !finiteIn(contact.headingDeg, -360.0, 720.0)
+            || !finiteIn(contact.speedKts, 0.0, 10000.0)) {
+            continue;
+        }
+        contact.displayName[sizeof(contact.displayName) - 1] = '\0';
+        contact.aircraftTitle[sizeof(contact.aircraftTitle) - 1] = '\0';
+        snapshot.contacts[kept++] = contact;
+    }
+    for (std::uint32_t i = kept; i < snapshot.contactCount; ++i) {
+        snapshot.contacts[i] = MultiplayerContactV1{};
+    }
+    snapshot.contactCount = kept;
+    return true;
+}
+
+void sleepWhile(const std::atomic<bool>& stop, std::chrono::milliseconds total) {
+    const auto end = std::chrono::steady_clock::now() + total;
+    while (!stop && std::chrono::steady_clock::now() < end) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+}
+
+} // namespace
+
 void MultiplayerClient::run() {
     using namespace std::chrono_literals;
+    std::chrono::milliseconds backoff = 1000ms;
     while (!stopRequested_) {
         if (!connectWebSocket()) {
             connected_ = false;
-            for (int i = 0; i < 30 && !stopRequested_; ++i) {
-                std::this_thread::sleep_for(100ms);
-            }
+            const auto jitter = std::chrono::milliseconds(
+                static_cast<long long>(std::rand()) % (backoff.count() / 2 + 1));
+            sleepWhile(stopRequested_, backoff + jitter);
+            backoff = (std::min)(backoff * 2, std::chrono::milliseconds(30000));
             continue;
         }
 
         connected_ = true;
         std::cout << "Multiplayer relay connected.\n";
         if (!sendText(makeHello())) {
+            connected_ = false;
             closeWebSocket();
             continue;
         }
 
-        while (!stopRequested_ && connected_) {
-            for (int sent = 0; sent < 64; ++sent) {
-                MultiplayerCombatEventV1 combat{};
-                {
-                    std::lock_guard<std::mutex> lock(outgoingCombatMutex_);
-                    if (outgoingCombat_.empty()) { break; }
-                    combat = outgoingCombat_.front();
-                }
-                if (!sendText(makeCombatEvent(combat))) {
-                    connected_ = false;
-                    break;
-                }
-                {
-                    std::lock_guard<std::mutex> lock(outgoingCombatMutex_);
-                    if (!outgoingCombat_.empty()
-                        && outgoingCombat_.front().sequence == combat.sequence) {
-                        outgoingCombat_.pop_front();
-                    }
+        const long long startedAt = nowMs();
+        lastReceiveMs_ = startedAt;
+        void* const socket = socket_;
+        receiverRunning_ = true;
+        std::thread receiver(&MultiplayerClient::receiveLoop, this, socket);
+        sendLoop();
+        connected_ = false;
+        abortSocket(receiver);
+        closeWebSocket();
+        if (lastReceiveMs_.load() > startedAt) { backoff = 1000ms; }
+        if (!stopRequested_) {
+            std::cout << "Multiplayer relay disconnected; retrying.\n";
+            sleepWhile(stopRequested_, backoff);
+        }
+    }
+}
+
+void MultiplayerClient::sendLoop() {
+    using namespace std::chrono_literals;
+    auto nextState = std::chrono::steady_clock::now();
+    while (!stopRequested_ && connected_) {
+        for (int sent = 0; sent < 64; ++sent) {
+            MultiplayerCombatEventV1 combat{};
+            {
+                std::lock_guard<std::mutex> lock(outgoingCombatMutex_);
+                if (outgoingCombat_.empty()) { break; }
+                combat = outgoingCombat_.front();
+            }
+            if (!sendText(makeCombatEvent(combat))) {
+                connected_ = false;
+                break;
+            }
+            {
+                std::lock_guard<std::mutex> lock(outgoingCombatMutex_);
+                if (!outgoingCombat_.empty()
+                    && outgoingCombat_.front().sequence == combat.sequence) {
+                    outgoingCombat_.pop_front();
                 }
             }
-            if (!connected_) { break; }
+        }
+        if (!connected_) { break; }
 
+        if (nowMs() - lastReceiveMs_.load() > kLivenessMs) {
+            std::cout << "Relay stopped answering.\n";
+            break;
+        }
+
+        const auto now = std::chrono::steady_clock::now();
+        if (now >= nextState) {
+            nextState = now + 100ms;
             UserAircraftState state{};
             bool valid = false;
             {
@@ -192,34 +276,72 @@ void MultiplayerClient::run() {
                 state = localState_;
                 valid = localStateValid_;
             }
-            if (!valid) {
-                std::this_thread::sleep_for(50ms);
-                continue;
-            }
-            if (!sendText(makeState(state))) { break; }
-
-            std::string message;
-            MultiplayerSnapshotV1 snapshot{};
-            bool hasSnapshot = false;
-            if (!receiveMessage(message, snapshot, hasSnapshot)) { break; }
-            if (hasSnapshot) {
-                {
-                    std::lock_guard<std::mutex> lock(snapshotMutex_);
-                    latestSnapshot_ = snapshot;
-                }
-                const int remote = static_cast<int>(snapshot.contactCount);
-                const int previous = remotePlayerCount_.exchange(remote);
-                if (previous != remote) {
-                    std::cout << "RK multiplayer contacts: " << remote << "\n";
-                }
-            } else {
-                processMessage(message);
-            }
-            std::this_thread::sleep_for(10ms);
+            if (valid && !sendText(makeState(state))) { break; }
         }
-        closeWebSocket();
-        if (!stopRequested_) { std::cout << "Multiplayer relay disconnected; retrying.\n"; }
+        std::this_thread::sleep_for(5ms);
     }
+}
+
+void MultiplayerClient::receiveLoop(void* socket) {
+    struct Done { std::atomic<bool>& flag; ~Done() { flag = false; } } done{receiverRunning_};
+    std::vector<char> buffer(65536);
+    std::string pending;
+    bool discard = false;
+    while (!stopRequested_ && connected_) {
+        DWORD received = 0;
+        WINHTTP_WEB_SOCKET_BUFFER_TYPE type =
+            WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE;
+        const DWORD result = WinHttpWebSocketReceive(
+            static_cast<HINTERNET>(socket), buffer.data(),
+            static_cast<DWORD>(buffer.size()), &received, &type);
+        if (result != NO_ERROR
+            || type == WINHTTP_WEB_SOCKET_CLOSE_BUFFER_TYPE) {
+            break;
+        }
+        lastReceiveMs_ = nowMs();
+        if (type == WINHTTP_WEB_SOCKET_BINARY_MESSAGE_BUFFER_TYPE) {
+            if (received != sizeof(MultiplayerSnapshotV1)) { continue; }
+            MultiplayerSnapshotV1 snapshot{};
+            std::memcpy(&snapshot, buffer.data(), sizeof(snapshot));
+            if (!cleanSnapshot(snapshot)) { continue; }
+            {
+                std::lock_guard<std::mutex> lock(snapshotMutex_);
+                latestSnapshot_ = snapshot;
+            }
+            const int remote = static_cast<int>(snapshot.contactCount);
+            const int previous = remotePlayerCount_.exchange(remote);
+            if (previous != remote) {
+                std::cout << "RK multiplayer contacts: " << remote << "\n";
+            }
+        } else if (type == WINHTTP_WEB_SOCKET_UTF8_FRAGMENT_BUFFER_TYPE
+            || type == WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE) {
+            if (discard || pending.size() + received > kMaxTextMessage) {
+                discard = true;
+                pending.clear();
+            } else {
+                pending.append(buffer.data(), received);
+            }
+            if (type == WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE) {
+                if (!discard) { processMessage(pending); }
+                pending.clear();
+                discard = false;
+            }
+        }
+    }
+    connected_ = false;
+}
+
+void MultiplayerClient::abortSocket(std::thread& receiver) {
+    if (socket_) {
+        WinHttpWebSocketShutdown(static_cast<HINTERNET>(socket_),
+            WINHTTP_WEB_SOCKET_SUCCESS_CLOSE_STATUS, nullptr, 0);
+        for (int i = 0; i < 10 && receiverRunning_; ++i) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+        WinHttpCloseHandle(static_cast<HINTERNET>(socket_));
+        socket_ = nullptr;
+    }
+    if (receiver.joinable()) { receiver.join(); }
 }
 
 bool MultiplayerClient::connectWebSocket() {
@@ -328,40 +450,6 @@ bool MultiplayerClient::sendText(const std::string& text) {
     return result == NO_ERROR;
 }
 
-bool MultiplayerClient::receiveMessage(std::string& text,
-    MultiplayerSnapshotV1& snapshot, bool& hasSnapshot) {
-    if (!socket_) { return false; }
-    hasSnapshot = false;
-    text.clear();
-    std::vector<char> buffer(65536);
-    DWORD received = 0;
-    WINHTTP_WEB_SOCKET_BUFFER_TYPE type =
-        WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE;
-    const DWORD result = WinHttpWebSocketReceive(
-        static_cast<HINTERNET>(socket_), buffer.data(),
-        static_cast<DWORD>(buffer.size()), &received, &type);
-    if (result != NO_ERROR
-        || type == WINHTTP_WEB_SOCKET_CLOSE_BUFFER_TYPE) {
-        return false;
-    }
-    if (type == WINHTTP_WEB_SOCKET_BINARY_MESSAGE_BUFFER_TYPE) {
-        if (received != sizeof(MultiplayerSnapshotV1)) { return true; }
-        std::memcpy(&snapshot, buffer.data(), sizeof(snapshot));
-        if (snapshot.magic != kMultiplayerMagic
-            || snapshot.protocolVersion != kMultiplayerVersion
-            || snapshot.messageSize != sizeof(MultiplayerSnapshotV1)
-            || snapshot.contactCount > kMaxMultiplayerContacts) {
-            return true;
-        }
-        hasSnapshot = true;
-        return true;
-    }
-    if (type == WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE) {
-        text.assign(buffer.data(), buffer.data() + received);
-    }
-    return true;
-}
-
 std::string MultiplayerClient::makeHello() const {
     std::ostringstream out;
     out << "{\"type\":\"hello\",\"protocol\":3"
@@ -433,6 +521,17 @@ void MultiplayerClient::processMessage(const std::string& text) {
             || !jsonNumber(text, "damage", damage)
             || !jsonNumber(text, "duration", duration)
             || !jsonNumber(text, "missDistance", missDistance)) {
+            return;
+        }
+        if (event.eventType < 1u || event.eventType > 9u
+            || event.weaponType < 1u || event.weaponType > 5u
+            || !finiteIn(latitude, -90.0, 90.0)
+            || !finiteIn(longitude, -180.0, 180.0)
+            || !finiteIn(altitudeFt, -2000.0, 200000.0)
+            || !finiteIn(headingDeg, -360.0, 720.0)
+            || !finiteIn(damage, 0.0, 1000.0)
+            || !finiteIn(duration, 0.0, 300.0)
+            || !finiteIn(missDistance, 0.0, 10000000.0)) {
             return;
         }
         event.latitude = latitude;

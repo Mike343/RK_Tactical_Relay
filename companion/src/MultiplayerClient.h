@@ -6,6 +6,7 @@
 #include <atomic>
 #include <deque>
 #include <mutex>
+#include <string>
 #include <thread>
 
 namespace rk {
@@ -31,8 +32,9 @@ private:
     bool connectWebSocket();
     void closeWebSocket();
     bool sendText(const std::string& text);
-    bool receiveMessage(std::string& text,
-        MultiplayerSnapshotV1& snapshot, bool& hasSnapshot);
+    void sendLoop();
+    void receiveLoop(void* socket);
+    void abortSocket(std::thread& receiver);
     std::string makeHello() const;
     std::string makeState(const UserAircraftState& state) const;
     std::string makeCombatEvent(const MultiplayerCombatEventV1& event) const;
@@ -46,6 +48,8 @@ private:
     std::atomic<bool> stopRequested_{false};
     std::atomic<bool> connected_{false};
     std::atomic<int> remotePlayerCount_{0};
+    std::atomic<long long> lastReceiveMs_{0};
+    std::atomic<bool> receiverRunning_{false};
     std::mutex snapshotMutex_;
     MultiplayerSnapshotV1 latestSnapshot_{};
     std::uint32_t consumedSnapshotSequence_ = 0;
