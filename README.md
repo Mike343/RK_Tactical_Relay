@@ -1,44 +1,45 @@
-# RK Tactical Relay (Protocol 3)
+# RK Tactical Relay
 
-A Go implementation of the RK Tactical Relay. It was rebuilt from the archived Node.js revision 6L server, the Tactical Companion 1.5 protocol header and the documented behavior of the August 25, 2026 Go `1.4.0-test3` release.
+This is the multiplayer relay for the RK Tactical Companion, written in Go. Pilots flying MSFS 2020 or 2024 connect their Companion to it and see each other in one shared worldwide room, with missiles, guns, countermeasures and team rules carried between them.
 
-This is not the original August 25 Go source and it is not proven to be byte for byte identical. Test it against real RK Tactical Companions before replacing a live server.
+The first version was rebuilt from the archived Node.js revision 6L server, the Companion 1.5 protocol header and the documented behavior of the August 25, 2026 Go `1.4.0-test3` release. I have since hardened it, taught it the Companion 1.5 team protocol, and added replicas, a Docker image, Kubernetes manifests, a deploy script, and a live server browser page. The Companion source lives in this repo too.
 
-## Source files
+It isn't the original August 25 source and it isn't proven to be byte for byte identical, so test it with real Companions before you trust it with a live server.
 
-- `main.go`: server, protocol 3, aircraft state and combat routing, snapshots, heartbeat, logging.
+## What's in here
+
+- `main.go`: the server. Protocol, aircraft state, combat routing, snapshots, heartbeat and logging.
+- `team.go`: Companion 1.5 team rules. Tracking, who can fight who, countermeasure sides.
 - `config.go`: `relay.ini` and environment settings.
-- `wire.go`: tolerant JSON decoding, so one malformed field drops that message instead of the connection.
-- `websocket.go`: RFC 6455 WebSocket server and client built on the Go standard library. Masking, ping and pong, close, fragments and size limits.
-- `outbox.go`: per connection send queue, so one slow client can't stall everyone else.
-- `proxy.go`: real client address behind a reverse proxy or load balancer.
+- `wire.go`: tolerant JSON decoding, so one bad field drops that message and not the connection.
+- `websocket.go`: an RFC 6455 WebSocket server and client on the Go standard library.
+- `outbox.go`: a send queue per connection, so one slow client can't stall everyone else.
+- `proxy.go`: the real client address behind a proxy or load balancer.
 - `peer.go`: links between replicas so several pods act as one room.
-- `dashboard.go`: loopback only `/dashboard` and `/api/stats`.
-- `public.go`: optional `/api/public` listing for the server browser.
-- `web/`, `Dockerfile.web`: the server browser page and its nginx image.
-- `companion/`: the RK Tactical Companion Windows app source, see its own README to build.
-- `main_test.go`: protocol, snapshot, routing, proxy and replica tests.
-- `integration_test.py`: optional two Companion wire test using Python `websocket-client`.
-- `reference/`: the original Node server and the Companion header, kept for auditing. They aren't needed to build.
-- `Dockerfile` and `deploy/k8s/`: container image and Kubernetes manifests.
+- `history.go` and `public.go`: recent flights and the public list behind the server browser.
+- `dashboard.go`: the local only `/dashboard` and `/api/stats`.
+- `resilience.go`: panic recovery, connection limits, readiness and draining.
+- `web/` and `Dockerfile.web`: the server browser page and its nginx image.
+- `companion/`: the Windows Companion app.
+- `Dockerfile`, `deploy/k8s/`, `deploy.ps1` and `RUNBOOK.md`: containers, Kubernetes and deployment.
+- `reference/`: the original Node servers and the Companion header. I keep them for auditing and they aren't needed to build.
+- Tests are `*_test.go`, plus an optional `integration_test.py` that drives two Companions over real sockets.
 
-## Building
+## Building and running
 
-Go 1.22 or newer. No external packages are needed.
+You need Go 1.22 or newer. There are no external packages.
 
-Windows x64:
-
-```bat
-BUILD_WINDOWS.cmd
+```powershell
+.\BUILD_WINDOWS.cmd
 ```
-
-Linux x64:
 
 ```sh
 sh BUILD_LINUX.sh
 ```
 
-Put `relay.ini` next to the binary and run it. On Windows the dashboard opens in the browser when `open_dashboard=true`. On Linux nothing is launched, so reach `/dashboard` through an SSH tunnel.
+Put `relay.ini` next to the binary and run it. On Windows the dashboard opens in your browser when `open_dashboard=true`. On Linux nothing launches, so reach `/dashboard` over an SSH tunnel.
+
+A Linux container is the better way to run it. A plain Windows binary is fine for testing.
 
 ## Configuration
 
@@ -57,15 +58,15 @@ max_conns_per_ip=64
 drain_seconds=0
 ```
 
-Environment variables override the file: `PORT`, `OPEN_DASHBOARD`, `PUBLIC_IP_LOOKUP`, `TRUST_PROXY`, `TRUSTED_PROXIES`, `PUBLIC_API`, `PEER_DNS`, `PEER_PORT`, `PEER_TOKEN`, `MAX_CONNS_PER_IP`, `DRAIN_SECONDS`. `POD_NAME` and `POD_IP` name this instance when running replicas.
+Environment variables win over the file: `PORT`, `OPEN_DASHBOARD`, `PUBLIC_IP_LOOKUP`, `TRUST_PROXY`, `TRUSTED_PROXIES`, `PUBLIC_API`, `PEER_DNS`, `PEER_PORT`, `PEER_TOKEN`, `MAX_CONNS_PER_IP` and `DRAIN_SECONDS`. `POD_NAME` and `POD_IP` name an instance when you run replicas.
 
-For a test instance set `PORT` to something else, like `18787`, and leave your public relay alone. Keep 8787 in production so existing Companion configs keep working.
+For a test instance set `PORT` to something like `18787` and leave your public relay alone. Keep 8787 in production so existing Companion configs keep working.
 
 ## Client addresses behind a proxy
 
-By default the relay logs the address of the TCP connection, which is the proxy or the node when you run behind one. Set `trust_proxy=true` and the relay reads `X-Forwarded-For` (or `X-Real-IP`) instead, but only when the connection comes from an address in `trusted_proxies`. It walks the forwarded list from the right and takes the first address that isn't a trusted proxy, so a client can't fake its own address by sending the header.
+By default the relay logs the address of the TCP connection, which is the proxy or the node when you sit behind one. Set `trust_proxy=true` and it reads `X-Forwarded-For` or `X-Real-IP` instead, but only when the connection comes from an address in `trusted_proxies`. It walks the forwarded list from the right and takes the first address that isn't a trusted proxy, so a client can't fake its address by sending the header.
 
-The dashboard never trusts these headers. It still needs a loopback connection, and it refuses requests that carry proxy headers or a non local `Host`.
+The dashboard never trusts those headers. It still needs a loopback connection, and it refuses requests with proxy headers or a `Host` that isn't local.
 
 ## Docker
 
@@ -74,99 +75,111 @@ docker build -t rk-tactical-relay .
 docker run -p 8787:8787 rk-tactical-relay
 ```
 
-The image is a static Linux binary on distroless, running as nonroot, with the public IP lookup off. The relay closes clients cleanly on SIGTERM. Use `/health` for probes.
+The image is a static Linux binary on distroless, running as a numeric nonroot user, with the public IP lookup off. The relay closes clients cleanly on SIGTERM. Use `/health` for liveness and `/ready` for readiness.
 
-## Kubernetes and replicas
+## Kubernetes
 
-The manifests are in `deploy/k8s/`. Create the shared secret first, then apply:
+The manifests are in `deploy/k8s/`. For a real deploy use `deploy.ps1`, which does everything from a fresh start: preflight checks, tests, build and push, namespace, pull secret, peer token, apply, rollout and a peer link check.
 
-```sh
-kubectl create secret generic rk-relay-peer --from-literal=token=$(openssl rand -hex 32)
-kubectl apply -k deploy/k8s
+```powershell
+.\deploy.ps1 -LoadBalancerIP 192.168.1.241
 ```
 
-Replicas find each other through the headless `rk-relay-peers` service and open a link between every pair of pods on port 8788. Over those links they share aircraft state and combat events, so pilots on different pods see each other and hits reach the target wherever it is connected. If a pilot reconnects on another pod, the old connection is closed. A link needs the shared token, and the NetworkPolicy only lets relay pods reach port 8788.
+`-DryRun` changes nothing, `-Status` shows what's running, `-Rollback` goes back one revision and `-Teardown` removes the namespace after you type its name. `RUNBOOK.md` has the same steps by hand, plus the OPNsense port forward, DNS and troubleshooting.
 
-What is included:
+Replicas find each other through the headless `rk-relay-peers` service and open a link between every pair of pods on port 8788. Over those links they share aircraft state, combat events and flight history, so pilots on different pods see each other and hits reach the target wherever it is connected. A pilot who reconnects on another pod has the old connection closed. A link needs the shared token and the network policy only lets relay pods reach port 8788.
 
-- `deployment.yaml`: two replicas, rolling updates, probes, read only root filesystem.
+What's included:
+
+- `deployment.yaml`: two replicas, rolling updates, probes and a read only root filesystem.
 - `service.yaml`: a LoadBalancer with `externalTrafficPolicy: Local`, which keeps the real client address without needing a proxy.
 - `service-peers.yaml`: the headless service for replica discovery.
-- `networkpolicy.yaml`, `pdb.yaml`, `hpa.yaml`: network limits, disruption budget and CPU autoscaling from 2 to 6 pods.
-- `ingress.yaml`: optional nginx example with long WebSocket timeouts. It isn't in the kustomization. Use it with `TRUST_PROXY=true`, which the deployment already sets.
+- `networkpolicy.yaml`, `pdb.yaml` and `hpa.yaml`: network limits, a disruption budget and CPU autoscaling from 2 to 6 pods.
+- `web.yaml`: the server browser, with an ingress for the page and a `/ws` route to the relay.
+- `ingress.yaml`: an optional nginx example for the relay alone. It isn't in the kustomization.
 
-Notes:
+Things to know:
 
-- The peer links aren't encrypted. The token and the traffic stay inside the cluster network, so use a mesh or encrypted CNI if that matters to you.
-- Scaling down closes the WebSocket connections on the removed pod. Companions reconnect on their own, but expect a short drop.
+- The peer links aren't encrypted. The token and the traffic stay on the cluster network, so use a mesh or an encrypted CNI if that matters to you.
+- Scaling down closes the connections on the removed pod. Companions reconnect on their own, but expect a short drop.
 - The player cap of 1,024 applies per pod.
 - Dashboards and counters are per pod. Use `kubectl port-forward` to reach one.
-- A new pod needs a few seconds to link up with the others, so remote contacts can be missing briefly after a rollout.
+- A new pod needs a few seconds to link up, so remote contacts can be missing briefly after a rollout.
 
-## Scaling and reliability
+## Server browser
 
-What the relay does to keep latency low and survive bad networks:
+`web/index.html` is a single page that shows who is flying right now. It has a map, a searchable pilot list, headline stats, a recent flights log, and the address to paste into the Companion. nginx serves it from `Dockerfile.web` and proxies `/api/public` to the relay, so the browser never talks to port 8787. `deploy.ps1` builds it and fills in the host name (`-Hostname`, `rk.hangaraddons.com` by default).
 
-- Every client has its own send queue and writer. A slow or stalled connection can't hold up anyone else, and it is dropped if its queue fills.
-- Snapshots are latest wins. If a client can't keep up it skips to the newest snapshot instead of working through old ones. Dropped snapshots and slow disconnects show up in the dashboard counters.
-- Snapshots are built across all CPU cores and pick the 32 nearest contacts without sorting everyone. A full 1,024 player broadcast takes about 50 ms of CPU.
-- Connections idle for 30 seconds are closed, on top of the ping and pong check, so half open sockets don't pile up.
-- At most `max_conns_per_ip` connections per client address (64 by default, 0 turns it off). Behind a proxy this uses the real address once `trust_proxy` is on.
-- Background loops and writers recover from panics and restart, so one bad message can't take the relay down.
-- On SIGTERM the relay fails `/ready`, refuses new connections, waits `drain_seconds`, then closes clients with a going away code. Give the pod a termination grace period longer than that.
-- Replica links reconnect on their own, and replicas share state every 100 ms. Remote pilots show up in snapshots within about 350 ms, and combat crosses pods straight away.
+The relay is one worldwide room, so the page lists pilots, not separate sessions. Positions are rounded to about a kilometre and altitudes to the nearest 100 feet. The list only exists when `public_api=true`, and the Kubernetes deployment turns it on. Map tiles come from OpenStreetMap and Leaflet from unpkg, so visitors' browsers contact both.
 
-Scaling limits: each pod holds up to 1,024 pilots and replicas link in a full mesh, which is fine for a handful of pods. Past roughly ten, a different design would be needed.
+Recent flights are the last 200 sessions where a pilot flew for at least 20 seconds. Replicas share them and a new pod copies them from its peers, so they survive a rolling update. They live in memory, so restarting every pod at once clears them.
 
-## Client compatibility
+The same host also serves the relay over TLS at `wss://rk.hangaraddons.com/ws` through the ingress. Use it for networks that block port 8787.
 
-Taken from the revision 6L Node server and Companion 1.5.
+## Companion
+
+The Windows Companion is in `companion/`. It's a C++ SimConnect app that plays the missile warning sounds and carries your aircraft state and combat events to the relay. Build it with Visual Studio and the MSFS SDK as described in `companion/README.md`, and set `relay_url` in `companion/companion.ini` first.
+
+To make a release, bump the version in `companion/src/Version.h` and run `companion/Release-Companion.ps1`. It builds, checks that `relay_url` is set, and writes `companion/dist/RKTacticalCompanion-<version>.zip` and a `.sha256` file. The zip has the exe, ini, audio, SimConnect.dll and a player README. The script prints the `gh release create` command to publish it. Build output and the zip are ignored by git.
+
+`reference/RelayServer_Companion15_Protocol4.js` is the Node relay that came with Companion 1.5. I keep it to audit the team rules. It asks for hello protocol 4 while the Companion sends 3, and this relay accepts both.
+
+## Reliability
+
+- Every client has its own send queue and writer. A slow or stalled connection can't hold anyone up, and it gets dropped if its queue fills.
+- Snapshots are latest wins. A client that can't keep up skips to the newest one, and the drops show in the dashboard counters.
+- Snapshots are built across all CPU cores and pick the 32 nearest contacts without sorting everyone. A full 1,024 player broadcast costs about 50 ms of CPU.
+- Connections idle for 30 seconds are closed, on top of the ping and pong check.
+- At most `max_conns_per_ip` connections per client address, 64 by default and 0 turns it off.
+- Background loops and writers recover from panics and restart.
+- On SIGTERM the relay fails `/ready`, refuses new connections, waits `drain_seconds`, then closes clients with a going away code. Give the pod a longer termination grace period than that.
+- Replica links reconnect on their own and share state every 100 ms. Remote pilots show up within about 350 ms, and combat crosses pods straight away.
+
+Replicas link in a full mesh, which is fine for a handful of pods. Past about ten you'd want a different design.
+
+## Protocol
 
 | Item | Value |
 |---|---|
 | WebSocket | uncompressed text JSON in, binary snapshots and JSON combat events out |
 | Hello | `{"type":"hello","protocol":3,"id":"pilot-id","name":"Pilot Name"}`, protocol 3 or 4 is accepted |
-| Welcome | `{"type":"welcome","protocol":3,"id":"pilot-id","network":"rk-tactical-global"}`, echoes the protocol the client sent |
+| Welcome | `{"type":"welcome","protocol":3,"id":"pilot-id","network":"rk-tactical-global"}`, echoing the client's protocol |
 | Network | `rk-tactical-global`, one worldwide room |
-| Snapshot magic | `0x31504D52` little endian |
-| Snapshot length | 3864 bytes, 24 byte header, 120 byte contact records, header version 4 |
-| Contacts per viewer | 32 nearest live pilots, state expires after 10 seconds |
+| Snapshot | magic `0x31504D52`, 3864 bytes, 24 byte header (version 4), 120 byte contacts, little endian |
+| Contacts per viewer | the 32 nearest live pilots, state expires after 10 seconds |
 | Contact hash | FNV-1a 32 bit of the UTF-8 player ID |
 | Combat source ID | `0x60000000 \| (hash & 0x0fffffff)` |
 | Combat events | 1 launch, 2 end, 3 hit, 4 countermeasure, 5 visual update, 6 explosion, 7 to 9 team events |
-| Teams | state carries `team` (0 solo, 1, 2), `flight` and `detected`. Contact flags are the team plus 4 when tracked by the viewer's team |
-| Combat delivery | hits go only to the target, everything else to all other pilots |
-| Local target flag | low bit set on combat sent to the selected target |
-| State limit | one state update per 100 ms per player |
-| Snapshot rate | every 250 ms, and right away on connect and disconnect |
+| Teams | state carries `team` (0 solo, 1, 2), `flight` and `detected`. Contact flags are the team plus 4 when the viewer's team tracks it |
+| Combat delivery | hits go only to the target, everything else to all other pilots, and the low flag bit marks the target |
+| Limits | one state update per 100 ms, snapshots every 250 ms and on connect or disconnect, 16 KiB per message, 1,024 players per instance |
 | Heartbeat | ping every 5 seconds, disconnect after a missed pong |
-| Max players | 1,024 per instance |
-| Max inbound message | 16 KiB |
 
-Additions on top of the original behavior:
+On top of the original behavior:
 
 - Combat is limited to 300 events per second per client.
 - At most 256 connections can wait on their hello at once.
-- Snapshots and combat go out only after the welcome has been sent.
+- Snapshots and combat only go out after the welcome has been sent.
 - Malformed fields drop the message, not the connection.
-- Team rules from Companion 1.5: pilots on a team only fight the other team or each other, solo pilots only fight solo pilots, launches need the target tracked by a teammate, and countermeasures stay inside the same side.
+- Team rules from Companion 1.5. A team only fights the other team, solo pilots only fight solo pilots, a launch needs the target tracked by a teammate, and countermeasures stay on the same side.
 
 ## Endpoints
 
-- `/` takes the Companion WebSocket upgrade. As with the Node server, other unreserved paths also work.
-- `/health` returns status, protocol, player count and peer count, with no player details. Use it for liveness.
-- `/ready` is the same, but answers 503 while the relay is draining, and for the first few seconds of a replica so it can link up before it takes pilots. Use it for readiness.
-- `/api/public` is the list behind the server browser page. It answers only when `public_api=true`, and shows pilot names, aircraft, speed, altitude and positions rounded to about a kilometre.
+- `/` takes the Companion WebSocket upgrade. As with the Node server, other unreserved paths also work, which is how `/ws` behind the ingress reaches it.
+- `/health` returns status, protocol, player count and peer count with no player details.
+- `/ready` is the same but answers 503 while draining, and for the first few seconds of a new replica so it can link up first.
+- `/api/public` is the list behind the server browser, only when `public_api=true`.
 - `/dashboard` and `/api/stats` only answer on a loopback connection. Use an SSH tunnel, a VPN or `kubectl port-forward`.
-- Port 8788 is the replica link and is only started when `peer_dns` and `peer_token` are set. Don't expose it publicly.
+- Port 8788 is the replica link. It only starts when `peer_dns` and `peer_token` are set. Don't expose it publicly.
 
 The dashboard shows a green light while at least one Companion is connected, and `REMOTE CONNECTION CONFIRMED` once a public address has finished a handshake.
 
 ## Limitations
 
-- Not yet tested against real MSFS 2020 or 2024 Companions on separate PCs.
-- The `ws://` endpoint is unencrypted and players aren't authenticated. Anyone who knows a pilot ID can take it over, as with the original server.
-- The dashboard memory figure is the Go heap, and CPU isn't sampled. Everything lives in memory and is lost on restart.
+- Not yet tested against real MSFS Companions on separate PCs, and the team rules are only covered by the test suite.
+- The `ws://` endpoint is unencrypted and pilots aren't authenticated. Anyone who knows a pilot ID can take it over, the same as the original server. Use the `wss://` address when you can.
+- The dashboard memory figure is the Go heap and CPU isn't sampled. Everything is in memory and lost on restart.
+- The Companion isn't code signed yet, so Windows SmartScreen warns about it.
 - Don't run the old and new servers on the same port. Use a staging port to compare them.
 
 ## Testing
@@ -176,28 +189,6 @@ go vet ./...
 go test -race -count=1 ./...
 ```
 
-The tests start the relay in process and talk to it over real sockets: handshake order, protocol rejection, snapshots, combat routing, rate limits, proxy address handling, the dashboard guard, and two relays sharing contacts and combat through a peer link.
+The tests start the relay in process and talk to it over real sockets: handshake order, protocol rejection, snapshots, team tracking, combat routing, rate limits, proxy handling, the dashboard guard, flight history, and two relays sharing contacts and combat through a peer link.
 
-`python integration_test.py` runs the optional external wire test against a built binary.
-
-To audit the behavior, compare `reference/RelayServer_6L_Protocol3.js` and `reference/Companion_6L_Protocol.h` with `main.go` and the tests.
-
-## Server browser
-
-`web/index.html` is a single page that shows who is flying, with a map, a searchable pilot list, a recent flights log and the address to paste into the Companion. It is served by nginx from `Dockerfile.web` and asks the relay for `/api/public` through the same host, so the browser never talks to port 8787. The Kubernetes manifest in `deploy/k8s/web.yaml` puts it behind the nginx ingress with a Let's Encrypt certificate, and `deploy.ps1` builds, pushes and fills in the host name (`-Hostname`, `rk.hangaraddons.com` by default).
-
-The relay is one worldwide room, so the page lists pilots rather than separate sessions. Map tiles come from OpenStreetMap and Leaflet from unpkg, so visitors' browsers contact both.
-
-Recent flights are the last 200 sessions where a pilot flew for at least 20 seconds. Replicas share them and a new pod copies them from its peers, so they survive a rolling update. They live in memory only, so restarting every pod at once clears them.
-
-The same host also serves the relay over TLS at `wss://rk.hangaraddons.com/ws` through the ingress. That works for networks that block port 8787, and the Companion can use it as `relay_url`.
-
-## Companion
-
-The Windows Companion lives in `companion/`. It is a C++ SimConnect app, built with Visual Studio 2022 and the MSFS SDK as described in `companion/README.md`. Set `relay_url` in `companion/companion.ini` before packaging. `companion/Package-Companion.ps1 <build folder>` zips the exe, ini, audio and SimConnect.dll into `companion/dist`. Build output, the Visual Studio cache and the packaged zip are ignored by git.
-
-`reference/RelayServer_Companion15_Protocol4.js` is the Node relay that shipped with Companion 1.5. It is kept to audit the team rules, and it asks for hello protocol 4 while the Companion sends 3, which this Go relay accepts.
-
-### Releasing the Companion
-
-The version is in `companion/src/Version.h`. Build on a Windows PC with Visual Studio 2022 (the Desktop development with C++ workload) and the MSFS SDK, then run `companion/Release-Companion.ps1`. It builds, checks that `relay_url` is set, and writes `companion/dist/RKTacticalCompanion-<version>.zip` and a `.sha256` file. The zip holds the exe, ini, audio, SimConnect.dll and the player README. The script prints the `gh release create` command to publish it.
+`python integration_test.py` runs the optional external wire test against a built binary. To audit the behavior, compare the files in `reference/` with `main.go`, `team.go` and the tests.
