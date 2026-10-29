@@ -16,6 +16,7 @@ This is not the original August 25 Go source and it is not proven to be byte for
 - `dashboard.go`: loopback only `/dashboard` and `/api/stats`.
 - `public.go`: optional `/api/public` listing for the server browser.
 - `web/`, `Dockerfile.web`: the server browser page and its nginx image.
+- `companion/`: the RK Tactical Companion Windows app source, see its own README to build.
 - `main_test.go`: protocol, snapshot, routing, proxy and replica tests.
 - `integration_test.py`: optional two Companion wire test using Python `websocket-client`.
 - `reference/`: the original Node server and the Companion header, kept for auditing. They aren't needed to build.
@@ -190,3 +191,9 @@ The relay is one worldwide room, so the page lists pilots rather than separate s
 Recent flights are the last 200 sessions where a pilot flew for at least 20 seconds. Replicas share them and a new pod copies them from its peers, so they survive a rolling update. They live in memory only, so restarting every pod at once clears them.
 
 The same host also serves the relay over TLS at `wss://rk.hangaraddons.com/ws` through the ingress. That works for networks that block port 8787, and the Companion can use it as `relay_url`.
+
+## Companion
+
+The Windows Companion lives in `companion/`. It is a C++ SimConnect app, built with Visual Studio 2022 and the MSFS SDK as described in `companion/README.md`. Set `relay_url` in `companion/companion.ini` before packaging. `companion/Package-Companion.ps1 <build folder>` zips the exe, ini, audio and SimConnect.dll into `companion/dist`. Build output, the Visual Studio cache and the packaged zip are ignored by git.
+
+`reference/RelayServer_Companion15_Protocol4.js` is the Node relay that shipped with Companion 1.5. It is kept to audit the team rules, and it asks for hello protocol 4 while the Companion sends 3, which this Go relay accepts.

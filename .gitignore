@@ -1,3 +1,15 @@
 RKTacticalRelay
 RKTacticalRelay.exe
 rk_relay_integration
+
+companion/bin/
+companion/obj/
+companion/.vs/
+companion/dist/
+companion/x64/
+*.user
+*.pdb
+*.ilk
+*.obj
+*.db
+*.suo
