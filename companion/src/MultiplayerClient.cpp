@@ -1,4 +1,5 @@
 #include "MultiplayerClient.h"
+#include "Version.h"
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -239,7 +240,7 @@ bool MultiplayerClient::connectWebSocket() {
     }
     if (path.empty()) { path = L"/"; }
 
-    HINTERNET session = WinHttpOpen(L"RKTacticalCompanion/1.5",
+    HINTERNET session = WinHttpOpen(L"RKTacticalCompanion/" RK_COMPANION_VERSION,
         WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME,
         WINHTTP_NO_PROXY_BYPASS, 0);
     if (!session) { return false; }

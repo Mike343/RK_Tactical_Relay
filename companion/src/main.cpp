@@ -2,6 +2,7 @@
 #include "Config.h"
 #include "MultiplayerClient.h"
 #include "Protocol.h"
+#include "Version.h"
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -329,7 +330,7 @@ int wmain() {
     }
     const rk::CompanionConfig config = rk::loadConfig();
 
-    std::wcout << L"RK Tactical Companion 1.5 SHARED WEAPONS AND VFX\n"
+    std::wcout << L"RK Tactical Companion " RK_COMPANION_VERSION L" SHARED WEAPONS AND VFX\n"
         << L"Stable Windows audio + multiplayer transport\n"
         << L"L = test launch sound, M = toggle active warning, Q = quit\n";
 

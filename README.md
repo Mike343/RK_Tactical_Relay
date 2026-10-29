@@ -197,3 +197,7 @@ The same host also serves the relay over TLS at `wss://rk.hangaraddons.com/ws` t
 The Windows Companion lives in `companion/`. It is a C++ SimConnect app, built with Visual Studio 2022 and the MSFS SDK as described in `companion/README.md`. Set `relay_url` in `companion/companion.ini` before packaging. `companion/Package-Companion.ps1 <build folder>` zips the exe, ini, audio and SimConnect.dll into `companion/dist`. Build output, the Visual Studio cache and the packaged zip are ignored by git.
 
 `reference/RelayServer_Companion15_Protocol4.js` is the Node relay that shipped with Companion 1.5. It is kept to audit the team rules, and it asks for hello protocol 4 while the Companion sends 3, which this Go relay accepts.
+
+### Releasing the Companion
+
+The version is in `companion/src/Version.h`. Build on a Windows PC with Visual Studio 2022 (the Desktop development with C++ workload) and the MSFS SDK, then run `companion/Release-Companion.ps1`. It builds, checks that `relay_url` is set, and writes `companion/dist/RKTacticalCompanion-<version>.zip` and a `.sha256` file. The zip holds the exe, ini, audio, SimConnect.dll and the player README. The script prints the `gh release create` command to publish it.

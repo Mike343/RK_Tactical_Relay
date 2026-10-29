@@ -104,6 +104,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)Package-Compan
     <ClInclude Include="src\Config.h" />
     <ClInclude Include="src\MultiplayerClient.h" />
     <ClInclude Include="src\Protocol.h" />
+    <ClInclude Include="src\Version.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="companion.ini" />
