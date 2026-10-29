@@ -83,6 +83,25 @@ type wireMessage struct {
 	Damage       number `json:"damage"`
 	Duration     number `json:"duration"`
 	MissDistance number `json:"missDistance"`
+	Team         number `json:"team"`
+	Flight       number `json:"flight"`
+	Detected     idList `json:"detected"`
 }
 
 func num(v float64) number { return number{v, true} }
+
+type idList []uint32
+
+func (l *idList) UnmarshalJSON(b []byte) error {
+	*l = nil
+	var raw []float64
+	if json.Unmarshal(b, &raw) != nil {
+		return nil
+	}
+	for _, v := range raw {
+		if n, ok := num(v).unsigned(^uint32(0)); ok && len(*l) < 32 {
+			*l = append(*l, n)
+		}
+	}
+	return nil
+}

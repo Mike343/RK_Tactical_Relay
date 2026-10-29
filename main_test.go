@@ -31,7 +31,7 @@ func TestSnapshotProtocol3(t *testing.T) {
 	for _, v := range []struct {
 		off  int
 		want uint32
-	}{{0, magic}, {4, 3}, {8, 3864}, {16, 1}, {24, hashID("alpha")}} {
+	}{{0, magic}, {4, 4}, {8, 3864}, {16, 1}, {24, hashID("alpha")}} {
 		if got := binary.LittleEndian.Uint32(b[v.off : v.off+4]); got != v.want {
 			t.Errorf("offset %d got %d want %d", v.off, got, v.want)
 		}
@@ -507,6 +507,10 @@ func TestPeersShareContactsAndCombat(t *testing.T) {
 	if _, ok := pb.waitSnapshot(1, 3*time.Second); !ok {
 		t.Fatal("contact from the other pod never appeared")
 	}
+	pb.send(stateMsg(11))
+	if _, ok := pa.waitSnapshot(1, 3*time.Second); !ok {
+		t.Fatal("target from the other pod never appeared")
+	}
 	pa.send(combatMsg(3, panelContactID("bravo")))
 	m, ok := pb.waitText("combat", 2*time.Second)
 	if !ok || uint32(m["flags"].(float64))&1 != 1 {
@@ -578,7 +582,7 @@ func BenchmarkBroadcast1024(b *testing.B) {
 	contacts := benchContacts(1024)
 	for i := 0; i < b.N; i++ {
 		for v := range contacts {
-			buildSnapshot(uint32(i+1), contacts[v].id, &contacts[v].state, contacts)
+			buildSnapshot(uint32(i+1), contacts[v].id, 0, &contacts[v].state, contacts)
 		}
 	}
 }

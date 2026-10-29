@@ -31,22 +31,26 @@ type peerLink struct {
 }
 
 type peerState struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	Aircraft string  `json:"aircraft"`
-	Lat      float64 `json:"lat"`
-	Lon      float64 `json:"lon"`
-	AltFt    float64 `json:"altFt"`
-	Heading  float64 `json:"heading"`
-	SpeedKts float64 `json:"speedKts"`
-	Joined   int64   `json:"joined"`
+	ID       string   `json:"id"`
+	Name     string   `json:"name"`
+	Aircraft string   `json:"aircraft"`
+	Lat      float64  `json:"lat"`
+	Lon      float64  `json:"lon"`
+	AltFt    float64  `json:"altFt"`
+	Heading  float64  `json:"heading"`
+	SpeedKts float64  `json:"speedKts"`
+	Joined   int64    `json:"joined"`
+	Team     uint32   `json:"team,omitempty"`
+	Detected []uint32 `json:"detected,omitempty"`
 }
 
 type peerEnvelope struct {
-	T      string         `json:"t"`
-	ID     string         `json:"id,omitempty"`
-	States []peerState    `json:"states,omitempty"`
-	Combat *combatMessage `json:"combat,omitempty"`
+	T       string          `json:"t"`
+	ID      string          `json:"id,omitempty"`
+	States  []peerState     `json:"states,omitempty"`
+	Combat  *combatMessage  `json:"combat,omitempty"`
+	Session *sessionRecord  `json:"session,omitempty"`
+	History []sessionRecord `json:"history,omitempty"`
 }
 
 func (s *relayServer) peerCount() int {
@@ -80,6 +84,10 @@ func (s *relayServer) addPeer(ws *webSocket, pod string) *peerLink {
 		old.ws.close()
 	}
 	go l.run(s.addBytesOut)
+	if h := s.historySnapshot(); len(h) > 0 {
+		b, _ := json.Marshal(peerEnvelope{T: "history", History: h})
+		l.enqueue(wsText, b)
+	}
 	s.logEvent("PEER_UP pod=%s", pod)
 	return l
 }
@@ -137,7 +145,7 @@ func (s *relayServer) handlePeer(l *peerLink, env peerEnvelope) {
 				continue
 			}
 			s.remote[p.ID] = remoteContact{
-				contact: contact{id: p.ID, hash: hashID(p.ID), name: cleanText(p.Name, 40), joined: time.Unix(0, p.Joined), state: aircraftState{Lat: p.Lat, Lon: p.Lon, AltFt: p.AltFt, Heading: p.Heading, SpeedKts: p.SpeedKts, Aircraft: cleanText(p.Aircraft, 80)}},
+				contact: contact{id: p.ID, hash: hashID(p.ID), name: cleanText(p.Name, 40), joined: time.Unix(0, p.Joined), state: aircraftState{Lat: p.Lat, Lon: p.Lon, AltFt: p.AltFt, Heading: p.Heading, SpeedKts: p.SpeedKts, Aircraft: cleanText(p.Aircraft, 80)}, team: min(p.Team, 2), detected: p.Detected[:min(len(p.Detected), 32)], panel: panelContactID(p.ID)},
 				pod:     l.pod,
 				seen:    now,
 			}
@@ -157,6 +165,12 @@ func (s *relayServer) handlePeer(l *peerLink, env peerEnvelope) {
 			c.WS.closeWith(4001, "identity reconnected")
 			s.logEvent("REPLACED name=%q id=%s address=%s reason=identity_connected_on_peer", c.Name, c.ID, c.IP)
 		}
+	case "session":
+		if env.Session != nil {
+			s.mergeHistory([]sessionRecord{*env.Session})
+		}
+	case "history":
+		s.mergeHistory(env.History)
 	case "leave":
 		s.mu.Lock()
 		if rc, ok := s.remote[env.ID]; ok && rc.pod == l.pod {
@@ -166,7 +180,7 @@ func (s *relayServer) handlePeer(l *peerLink, env peerEnvelope) {
 		s.requestBroadcast()
 	case "combat":
 		m := env.Combat
-		if m == nil || m.Event == 0 || m.Event > 6 || m.Weapon == 0 || m.Weapon > 5 {
+		if m == nil || m.Event == 0 || m.Event > 9 || m.Weapon == 0 || m.Weapon > 5 {
 			return
 		}
 		m.Type = "combat"
@@ -196,7 +210,7 @@ func (s *relayServer) syncPeers(now time.Time) {
 		if c.State == nil || now.Sub(c.LastState) > stateExpiry {
 			continue
 		}
-		states = append(states, localState{peerState{c.ID, c.Name, c.State.Aircraft, c.State.Lat, c.State.Lon, c.State.AltFt, c.State.Heading, c.State.SpeedKts, c.Joined.UnixNano()}, c.LastState})
+		states = append(states, localState{peerState{c.ID, c.Name, c.State.Aircraft, c.State.Lat, c.State.Lon, c.State.AltFt, c.State.Heading, c.State.SpeedKts, c.Joined.UnixNano(), c.Team, c.Detected}, c.LastState})
 	}
 	s.mu.Unlock()
 	encoded := make(map[time.Time][]byte)

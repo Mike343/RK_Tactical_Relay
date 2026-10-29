@@ -19,14 +19,24 @@ type publicPilot struct {
 	Online   int64   `json:"online_seconds"`
 }
 
+type publicSession struct {
+	Name        string `json:"name"`
+	Aircraft    string `json:"aircraft"`
+	Started     string `json:"started"`
+	Seconds     int64  `json:"seconds"`
+	MaxAltFt    int    `json:"max_alt_ft"`
+	MaxSpeedKts int    `json:"max_speed_kts"`
+}
+
 type publicInfo struct {
-	Version  string        `json:"version"`
-	Network  string        `json:"network"`
-	Protocol uint32        `json:"protocol"`
-	Online   int           `json:"online"`
-	Replicas int           `json:"replicas"`
-	Uptime   int64         `json:"uptime_seconds"`
-	Pilots   []publicPilot `json:"pilots"`
+	Version  string          `json:"version"`
+	Network  string          `json:"network"`
+	Protocol uint32          `json:"protocol"`
+	Online   int             `json:"online"`
+	Replicas int             `json:"replicas"`
+	Uptime   int64           `json:"uptime_seconds"`
+	Pilots   []publicPilot   `json:"pilots"`
+	Recent   []publicSession `json:"recent"`
 }
 
 func roundTo(v float64, places int) float64 {
@@ -70,6 +80,11 @@ func (s *relayServer) publicInfo(now time.Time) publicInfo {
 		out.Pilots = out.Pilots[:maxPlayers]
 	}
 	out.Online = len(out.Pilots)
+	hist := s.historySnapshot()
+	out.Recent = make([]publicSession, 0, 25)
+	for i := len(hist) - 1; i >= 0 && len(out.Recent) < 25; i-- {
+		out.Recent = append(out.Recent, roundedSession(hist[i]))
+	}
 	return out
 }
 

@@ -221,6 +221,8 @@ Add an A record, for example `rk.hangaraddons.com`, pointing at that public addr
 
 `deploy.ps1` also deploys the page at `https://rk.hangaraddons.com` (change it with `-Hostname`). It uses the existing nginx ingress and `letsencrypt-production`, so the same A record covers it as long as ports 80 and 443 already reach the ingress, like they do for the websites. The certificate can take a minute to issue. If it stays pending, `kubectl -n rk-relay get certificate,challenge` says why.
 
+The ingress also forwards `/ws` to the relay, so `wss://rk.hangaraddons.com/ws` works for Companions that can't reach port 8787. Client addresses still come through because the ingress sends `X-Forwarded-For` and `TRUST_PROXY` is on.
+
 ### The port forward
 
 In OPNsense open Firewall, NAT, Port Forward (called Destination NAT on newer versions) and add a rule:

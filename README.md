@@ -124,15 +124,16 @@ Taken from the revision 6L Node server and Companion 1.5.
 | Item | Value |
 |---|---|
 | WebSocket | uncompressed text JSON in, binary snapshots and JSON combat events out |
-| Hello | `{"type":"hello","protocol":3,"id":"pilot-id","name":"Pilot Name"}` |
-| Welcome | `{"type":"welcome","protocol":3,"id":"pilot-id","network":"rk-tactical-global"}` |
+| Hello | `{"type":"hello","protocol":3,"id":"pilot-id","name":"Pilot Name"}`, protocol 3 or 4 is accepted |
+| Welcome | `{"type":"welcome","protocol":3,"id":"pilot-id","network":"rk-tactical-global"}`, echoes the protocol the client sent |
 | Network | `rk-tactical-global`, one worldwide room |
 | Snapshot magic | `0x31504D52` little endian |
-| Snapshot length | 3864 bytes, 24 byte header, 120 byte contact records |
+| Snapshot length | 3864 bytes, 24 byte header, 120 byte contact records, header version 4 |
 | Contacts per viewer | 32 nearest live pilots, state expires after 10 seconds |
 | Contact hash | FNV-1a 32 bit of the UTF-8 player ID |
 | Combat source ID | `0x60000000 \| (hash & 0x0fffffff)` |
-| Combat events | 1 launch, 2 end, 3 hit, 4 countermeasure, 5 visual update, 6 explosion |
+| Combat events | 1 launch, 2 end, 3 hit, 4 countermeasure, 5 visual update, 6 explosion, 7 to 9 team events |
+| Teams | state carries `team` (0 solo, 1, 2), `flight` and `detected`. Contact flags are the team plus 4 when tracked by the viewer's team |
 | Combat delivery | hits go only to the target, everything else to all other pilots |
 | Local target flag | low bit set on combat sent to the selected target |
 | State limit | one state update per 100 ms per player |
@@ -147,6 +148,7 @@ Additions on top of the original behavior:
 - At most 256 connections can wait on their hello at once.
 - Snapshots and combat go out only after the welcome has been sent.
 - Malformed fields drop the message, not the connection.
+- Team rules from Companion 1.5: pilots on a team only fight the other team or each other, solo pilots only fight solo pilots, launches need the target tracked by a teammate, and countermeasures stay inside the same side.
 
 ## Endpoints
 
@@ -181,6 +183,10 @@ To audit the behavior, compare `reference/RelayServer_6L_Protocol3.js` and `refe
 
 ## Server browser
 
-`web/index.html` is a single page that shows who is flying, with a map, a searchable pilot list and the address to paste into the Companion. It is served by nginx from `Dockerfile.web` and asks the relay for `/api/public` through the same host, so the browser never talks to port 8787. The Kubernetes manifest in `deploy/k8s/web.yaml` puts it behind the nginx ingress with a Let's Encrypt certificate, and `deploy.ps1` builds, pushes and fills in the host name (`-Hostname`, `rk.hangaraddons.com` by default).
+`web/index.html` is a single page that shows who is flying, with a map, a searchable pilot list, a recent flights log and the address to paste into the Companion. It is served by nginx from `Dockerfile.web` and asks the relay for `/api/public` through the same host, so the browser never talks to port 8787. The Kubernetes manifest in `deploy/k8s/web.yaml` puts it behind the nginx ingress with a Let's Encrypt certificate, and `deploy.ps1` builds, pushes and fills in the host name (`-Hostname`, `rk.hangaraddons.com` by default).
 
 The relay is one worldwide room, so the page lists pilots rather than separate sessions. Map tiles come from OpenStreetMap and Leaflet from unpkg, so visitors' browsers contact both.
+
+Recent flights are the last 200 sessions where a pilot flew for at least 20 seconds. Replicas share them and a new pod copies them from its peers, so they survive a rolling update. They live in memory only, so restarting every pod at once clears them.
+
+The same host also serves the relay over TLS at `wss://rk.hangaraddons.com/ws` through the ingress. That works for networks that block port 8787, and the Companion can use it as `relay_url`.
