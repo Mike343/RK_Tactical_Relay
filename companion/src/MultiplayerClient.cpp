@@ -68,6 +68,26 @@ bool jsonNumber(const std::string& text, const char* key, double& value) {
     return true;
 }
 
+bool jsonString(const std::string& text, const char* key, std::string& value) {
+    const std::string needle = std::string("\"") + key + "\":\"";
+    const std::size_t position = text.find(needle);
+    if (position == std::string::npos) { return false; }
+    std::string result;
+    for (std::size_t i = position + needle.size(); i < text.size(); ++i) {
+        const char c = text[i];
+        if (c == '"') {
+            value = result;
+            return true;
+        }
+        if (c == '\\' && i + 1 < text.size()) {
+            result.push_back(text[++i]);
+        } else {
+            result.push_back(c);
+        }
+    }
+    return false;
+}
+
 bool jsonUnsigned(const std::string& text, const char* key,
     std::uint32_t& value) {
     double parsed = 0.0;
@@ -510,6 +530,23 @@ std::string MultiplayerClient::makeState(const UserAircraftState& state) const {
 }
 
 void MultiplayerClient::processMessage(const std::string& text) {
+    if (text.find("\"type\":\"welcome\"") != std::string::npos) {
+        std::string assigned;
+        if (jsonString(text, "name", assigned) && !assigned.empty()) {
+            std::string requested;
+            {
+                std::lock_guard<std::mutex> lock(nameMutex_);
+                requested = utf8(config_.displayName);
+            }
+            if (assigned == requested) {
+                std::cout << "You are flying as \"" << assigned << "\".\n";
+            } else {
+                std::cout << "Someone is already using \"" << requested
+                    << "\", so you are flying as \"" << assigned << "\".\n";
+            }
+        }
+        return;
+    }
     if (text.find("\"type\":\"combat\"") != std::string::npos) {
         MultiplayerCombatEventV1 event{};
         event.magic = kCombatMagic;

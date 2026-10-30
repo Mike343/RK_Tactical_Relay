@@ -418,8 +418,9 @@ func (s *relayServer) acceptHello(ws *webSocket, remote string, msg wireMessage)
 		ws.closeWith(1013, "network full")
 		return nil, false
 	}
-	s.clients[ws] = c
 	delete(s.remote, id)
+	c.Name = s.uniqueNameLocked(name, id, time.Now())
+	s.clients[ws] = c
 	s.counts.Connects.Add(1)
 	if !isPrivateIP(remote) {
 		s.remotelyConfirmed = true
@@ -430,13 +431,18 @@ func (s *relayServer) acceptHello(ws *webSocket, remote string, msg wireMessage)
 		old.WS.closeWith(4001, "identity reconnected")
 		s.logEvent("REPLACED name=%q id=%s address=%s reason=identity_reconnected", old.Name, old.ID, old.IP)
 	}
-	s.logEvent("CONNECT name=%q id=%s address=%s users=%d", name, id, remote, users)
+	if c.Name != name {
+		s.logEvent("CONNECT name=%q renamed=%q id=%s address=%s users=%d", name, c.Name, id, remote, users)
+	} else {
+		s.logEvent("CONNECT name=%q id=%s address=%s users=%d", name, id, remote, users)
+	}
 	welcome := struct {
 		Type     string `json:"type"`
 		Protocol uint32 `json:"protocol"`
 		ID       string `json:"id"`
+		Name     string `json:"name"`
 		Network  string `json:"network"`
-	}{"welcome", uint32(msg.Protocol.v), id, globalNetwork}
+	}{"welcome", uint32(msg.Protocol.v), id, c.Name, globalNetwork}
 	b, _ := json.Marshal(welcome)
 	if err := ws.writeFrame(wsText, b); err != nil {
 		s.mu.Lock()

@@ -38,3 +38,7 @@ If you want MSFS to have the whole PC to itself, you can run the Companion on a 
 3. On the PC running the Companion, set simconnect_host in companion.ini to the same address.
 
 The warning sounds play on the PC running the Companion, so use its speakers or headphones. SimConnect isn't encrypted, so only do this on your own network or a VPN.
+
+Names
+
+Every pilot name on the server is unique. If someone is already using yours, the server adds a number, like Maverick 2, and the window tells you the name you got.

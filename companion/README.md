@@ -131,3 +131,7 @@ Things to know:
 - Remote mode hasn't been tested with MSFS yet.
 
 `tests/Run-ConfigSmoke.ps1` checks the config behavior, including the `SimConnect.cfg` it writes and removes.
+
+## Changes in 1.5.3
+
+- If another pilot is already using your name, the relay gives you the same name with a number added, like `Maverick 2`, and the Companion tells you what you ended up with. The check ignores capitals and covers every replica. A pilot who reconnects keeps their name, and a name is free again once that pilot leaves.

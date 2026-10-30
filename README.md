@@ -157,6 +157,7 @@ Replicas link in a full mesh, which is fine for a handful of pods. Past about te
 
 On top of the original behavior:
 
+- Pilot names are unique. If a name is taken, ignoring capitals, the newcomer gets a number added (`Maverick 2`) and the welcome message carries the name they were given. A pilot who reconnects keeps theirs. Replicas can briefly allow a duplicate if two pilots join on different pods at the same moment.
 - Combat is limited to 300 events per second per client.
 - At most 256 connections can wait on their hello at once.
 - Snapshots and combat only go out after the welcome has been sent.

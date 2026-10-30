@@ -17,8 +17,8 @@ static rk::UserAircraftState at(double lat) {
 
 int main(int argc, char** argv) {
     std::wstring url = argc > 1 ? std::wstring(argv[1], argv[1] + strlen(argv[1])) : L"ws://127.0.0.1:18787";
-    rk::CompanionConfig ca; ca.relayUrl = url; ca.playerId = L"smoke-a"; ca.displayName = L"Alpha";
-    rk::CompanionConfig cb; cb.relayUrl = url; cb.playerId = L"smoke-b"; cb.displayName = L"Bravo";
+    rk::CompanionConfig ca; ca.relayUrl = url; ca.playerId = L"smoke-a"; ca.displayName = L"Pilot";
+    rk::CompanionConfig cb; cb.relayUrl = url; cb.playerId = L"smoke-b"; cb.displayName = L"Pilot";
     rk::MultiplayerClient a(ca), b(cb);
     a.start(); b.start();
     a.updateLocalState(at(10.0), true);
@@ -29,6 +29,8 @@ int main(int argc, char** argv) {
         std::this_thread::sleep_for(50ms);
         rk::MultiplayerSnapshotV1 s{};
         if (a.consumeSnapshot(s) && s.contactCount == 1) {
+            const std::string seen = s.contacts[0].displayName;
+            if (seen != "Pilot" && seen != "Pilot 2") { std::cout << "FAIL unexpected name " << seen << "\n"; return 1; }
             std::cout << "A sees " << s.contacts[0].displayName << " flying " << s.contacts[0].aircraftTitle << "\n";
             saw = true;
         }
