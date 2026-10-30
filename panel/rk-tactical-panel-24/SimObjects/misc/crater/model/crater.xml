@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{4b781900-b4bd-46a9-8eee-da9b381fe4ef}" version="1.1">
+	<LODS>
+		<LOD MinSize="0" ModelFile="crater.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="Cloud" Node="Crater">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{229A89C6-1F1E-4D05-AE08-F1A3CAEC0BCE}</FX_GUID>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

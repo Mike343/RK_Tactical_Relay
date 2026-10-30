@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{3e482a4b-4997-e236-9c88-64b0644db646}" version="1.1">
+	<Animation name="seat" guid="{28ceb1bc-ecfa-4c46-bb61-c23674f25b04}" type="Standard"/>
+	<Animation name="suit" guid="{1d33014c-0c66-4853-9fb4-2f221cf2d7f2}" type="Standard"/>
+	<LODS>
+		<LOD MinSize="0" ModelFile="kbab.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Component ID="Seat" Node="mixamorig:Hips">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>seat</ANIM_NAME>
+				<ANIM_CODE>1</ANIM_CODE>
+				<ANIM_LENGTH>250</ANIM_LENGTH>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Suit" Node="mixamorig:Hips_a">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>suit</ANIM_NAME>
+				<ANIM_CODE>1</ANIM_CODE>
+				<ANIM_LENGTH>1125</ANIM_LENGTH>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Component ID="RK_Target_KBAB_0" Node="node0">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_13" Node="mesh.030">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_14" Node="mesh.009">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_15" Node="Hips_a">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_40" Node="Hips">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_65" Node="MSFS2020 Light001">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_66" Node="MSFS2020 Light002">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_67" Node="MSFS2020 Light003">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_68" Node="MSFS2020 Light004">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_69" Node="MSFS2020 Light005">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_70" Node="MSFS2020 Light007">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_71" Node="MSFS2020 Light008">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_72" Node="MSFS2020 Light009">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_73" Node="MSFS2020 Light006">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_74" Node="MSFS2020 Light010">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Target_KBAB_75" Node="MSFS2020 Light011">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>(L:RK_TAC_TARGET_KBAB_DESTROYED, Bool) !</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

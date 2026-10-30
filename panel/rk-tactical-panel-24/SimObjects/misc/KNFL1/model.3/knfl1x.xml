@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{462dfb8e-54ea-48b4-915e-b19bffc7799e}" version="1.1">
+	<LODS>
+		<LOD MinSize="30" ModelFile="knfl1x.gltf"/>
+		<LOD MinSize="15" ModelFile="knfl1x_LOD01.gltf"/>
+		<LOD MinSize="8" ModelFile="knfl1x_LOD02.gltf"/>
+		<LOD MinSize="3" ModelFile="knfl1x_LOD03.gltf"/>
+		<LOD MinSize=".5" ModelFile="knfl1x_LOD04.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="Cloud" Node="Base">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{229A89C6-1F1E-4D05-AE08-F1A3CAEC0BCE}</FX_GUID>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

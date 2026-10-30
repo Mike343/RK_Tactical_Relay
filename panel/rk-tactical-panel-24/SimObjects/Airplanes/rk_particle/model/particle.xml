@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo version="1.1" guid="{7be639c9-bae2-4594-aacd-dcb2a374607e}">
+	<LODS>
+		<LOD minSize="0" ModelFile="particle.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="Round" Node="Particle">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{826FAC25-3900-4376-A3DE-36AEC840030B}</FX_GUID>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

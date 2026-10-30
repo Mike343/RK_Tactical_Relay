@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo version="1.1" guid="{baa23b84-5635-4b5f-8210-7b4ac97da40d}">
+	<LODS>
+		<LOD minSize="0" ModelFile="harm.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="FX_CONTRAIL_QUAD">
+			<UseTemplate Name="ASOBO_CONTRAIL_QUAD_FX">
+				<FX_NAME>FX_CONTRAIL_QUAD_LEFT</FX_NAME>
+				<FX_NODE>Exhaust</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_RIBBON">
+			<UseTemplate Name="ASOBO_CONTRAIL_RIBBON_FX">
+				<FX_NAME>FX_CONTRAIL_RIBBON_LEFT</FX_NAME>
+				<FX_NODE>Exhaust</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="Exhaust_Cloud" Node="Exhaust">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>
+                    (A:GENERAL ENG COMBUSTION:1, Bool)
+            </FX_CODE>
+				<FX_GUID>{92577C09-030E-4E2F-BC9B-5E2477A3B83F}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="Exhaust_Smoke" Node="Exhaust">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>
+                    (A:GENERAL ENG COMBUSTION:1, Bool)
+            </FX_CODE>
+				<FX_GUID>{691535FB-EC06-4875-9365-7269B6CFEE69}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="Exhaust_Flame" Node="Exhaust">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>
+                    (A:GENERAL ENG COMBUSTION:1, Bool)
+            </FX_CODE>
+				<FX_GUID>{70697BB8-848A-443B-8088-6D85F1B4F06C}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="Exhaust_Plume" Node="Exhaust">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>
+                    (A:GENERAL ENG COMBUSTION:1, Bool)
+            </FX_CODE>
+				<FX_GUID>{92577C09-030E-4E2F-BC9B-5E2477A3B83F}</FX_GUID>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

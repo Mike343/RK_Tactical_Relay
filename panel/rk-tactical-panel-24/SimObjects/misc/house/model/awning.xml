@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{3e482a4b-4997-e236-9c88-64b0604db646}" version="1.1">
+	<LODS>
+		<LOD MinSize="0" ModelFile="awning.gltf"/>
+	</LODS>
+</ModelInfo>
+

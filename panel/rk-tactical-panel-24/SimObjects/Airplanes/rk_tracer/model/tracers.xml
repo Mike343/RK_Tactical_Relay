@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo version="1.1" guid="{e085786a-8c8e-404f-af13-b750352b0fc0}">
+	<LODS>
+		<LOD minSize="0" ModelFile="tracers.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="Tracers" Node="EffectCenter">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>
+                    (A:GENERAL ENG COMBUSTION:1, Bool)
+            </FX_CODE>
+				<FX_GUID>{954143EA-A3A9-49B9-83DD-3BD1488207C1}</FX_GUID>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

@@ -13,3 +13,4 @@ companion/x64/
 *.obj
 *.db
 *.suo
+dist/

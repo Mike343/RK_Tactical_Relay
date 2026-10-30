@@ -34,7 +34,18 @@ Copy-Item "SimConnect.xml.example" $folder
 
 $zip = Join-Path $dist "RKTacticalCompanion-$version.zip"
 Remove-Item $zip -Force -ErrorAction SilentlyContinue
-Compress-Archive -Path $folder -DestinationPath $zip
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$archive = [IO.Compression.ZipFile]::Open($zip, [IO.Compression.ZipArchiveMode]::Create)
+try {
+    foreach ($file in Get-ChildItem $folder -Recurse -File) {
+        $entry = $file.FullName.Substring($stage.Length + 1).Replace("\", "/")
+        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $file.FullName, $entry, [IO.Compression.CompressionLevel]::Optimal)
+    }
+}
+finally {
+    $archive.Dispose()
+}
 Remove-Item $stage -Recurse -Force
 
 $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()

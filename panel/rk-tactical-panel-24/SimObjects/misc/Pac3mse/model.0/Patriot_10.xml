@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{6646324c-687b-565f-b3b5-16065faba559}" version="1.1">
+	<Animation name="Blast" guid="{5bb7dcad-ead5-5561-865a-4c7f3a6cf66e}" type="Standard"/>
+	<Animation name="Launch" guid="{86c00487-9ff2-4ce9-8d4c-e50ad05d2b23}" type="Standard"/>
+	<Animation name="rotation" guid="{6dd2b1bc-59de-4172-acd9-b7de1956329c}" type="Standard"/>
+	<Animation name="Shrinker" guid="{637091da-c577-4e51-92a7-6a2a615c3c7e}" type="Standard"/>
+	<LODS>
+		<LOD MinSize="0" ModelFile="Patriot_LOD00.gltf"/>
+		<LOD MinSize="15" ModelFile="Patriot_LOD01.gltf"/>
+		<LOD MinSize="8" ModelFile="Patriot_LOD02.gltf"/>
+		<LOD MinSize="3" ModelFile="Patriot_LOD03.gltf"/>
+		<LOD MinSize=".5" ModelFile="Patriot_LOD04.gltf"/>
+	</LODS>
+	<Behaviors>
+		<AnimationTriggers Animation="Launch">
+			<EventTrigger NormalizedTime="0.01" Direction="Forward">
+				<SoundEvent WwiseEvent="custom_sound_01" Action="Play"/>
+			</EventTrigger>
+		</AnimationTriggers>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="Visibility" Node="Shrinker">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Shrinker</ANIM_NAME>
+				<ANIM_CODE>(L:RK_PATRIOT_L3_C3_LAUNCH, enum) 1 == 100 *</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>30</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_QUAD">
+			<UseTemplate Name="ASOBO_CONTRAIL_QUAD_FX">
+				<FX_NAME>FX_CONTRAIL_QUAD_LEFT</FX_NAME>
+				<FX_NODE>exhaust</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(L:RK_PATRIOT_L3_C3_EMIT, enum) 1 ==</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_RIBBON">
+			<UseTemplate Name="ASOBO_CONTRAIL_RIBBON_FX">
+				<FX_NAME>FX_CONTRAIL_RIBBON_LEFT</FX_NAME>
+				<FX_NODE>exhaust</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(L:RK_PATRIOT_L3_C3_EMIT, enum) 1 ==</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="Exhaust_Cloud" Node="exhaust">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>(L:RK_PATRIOT_L3_C3_EMIT, enum) 1 ==</FX_CODE>
+				<FX_GUID>{df2a2eda-2f71-44af-a576-3291c586dffb}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="Exhaust_Flame" Node="exhaust">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>(L:RK_PATRIOT_L3_C3_EMIT, enum) 1 ==</FX_CODE>
+				<FX_GUID>{70697BB8-848A-443B-8088-6D85F1B4F06C}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="RK_Patriot_White_Exhaust" Node="exhaust">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_GUID>{EB090E5F-7ABD-5D6C-92A6-FC9D4F476972}</FX_GUID>
+				<FX_CODE>(L:RK_PATRIOT_L3_C3_EMIT, enum) 1 ==</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="Rotation" Node="rotation">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>rotation</ANIM_NAME>
+				<ANIM_CODE>(L:RK_PATRIOT_L3_C3_ROTATION, number)</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Missile" Node="MIM_104_Patriot_PAC_3_MSE">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Launch</ANIM_NAME>
+				<ANIM_CODE>(L:RK_PATRIOT_L3_C3_LAUNCH, enum) 1 == 100 *</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>30</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

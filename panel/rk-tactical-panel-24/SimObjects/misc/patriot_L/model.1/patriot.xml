@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{491897ab-aaaa-477e-aba5-74ea4cc53fcb}" version="1.1">
+	<LODS>
+		<LOD MinSize="30" ModelFile="patriot_LOD00.gltf"/>
+		<LOD MinSize="15" ModelFile="patriot_LOD01.gltf"/>
+		<LOD MinSize="8" ModelFile="patriot_LOD02.gltf"/>
+		<LOD MinSize="3" ModelFile="patriot_LOD03.gltf"/>
+		<LOD MinSize=".5" ModelFile="patriot_LOD04.gltf"/>
+	</LODS>
+</ModelInfo>
+

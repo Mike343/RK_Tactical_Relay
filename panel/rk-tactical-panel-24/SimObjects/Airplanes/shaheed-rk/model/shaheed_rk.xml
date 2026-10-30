@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{d7105698-dd6b-419f-8da6-a89fc96f2225}" version="1.1">
+	<Animation name="Prop" guid="{74353129-cb4e-496b-90d2-11ea84bf6221}" type="Standard"/>
+	<LODS>
+		<LOD MinSize="30" ModelFile="shaheed_rk.gltf"/>
+		<LOD MinSize="15" ModelFile="shaheed_rk_LOD01.gltf"/>
+		<LOD MinSize="8" ModelFile="shaheed_rk_LOD02.gltf"/>
+		<LOD MinSize="3" ModelFile="shaheed_rk_LOD03.gltf"/>
+		<LOD MinSize=".5" ModelFile="shaheed_rk_LOD04.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="PROP" Node="Prop">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Prop</ANIM_NAME>
+				<ANIM_CODE>
+                    (A:ANIMATION DELTA TIME, seconds) 100 * 20 *
+                </ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

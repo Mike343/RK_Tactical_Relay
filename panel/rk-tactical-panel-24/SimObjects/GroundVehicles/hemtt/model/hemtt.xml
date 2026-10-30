@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{5bbcd208-53db-4ec7-93df-d659d5b85771}" version="1.1">
+	<LODS>
+		<LOD MinSize="0" ModelFile="hemtt.gltf"/>
+		<LOD MinSize="15" ModelFile="hemtt_LOD01.gltf"/>
+		<LOD MinSize="8" ModelFile="hemtt_LOD02.gltf"/>
+		<LOD MinSize="3" ModelFile="hemtt_LOD03.gltf"/>
+		<LOD MinSize=".5" ModelFile="hemtt_LOD04.gltf"/>
+	</LODS>
+</ModelInfo>
+

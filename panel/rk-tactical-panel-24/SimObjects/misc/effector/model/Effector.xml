@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{f6160da0-25a8-4631-8d87-efe17a665d14}" version="1.1">
+	<LODS>
+		<LOD MinSize="0" ModelFile="Effector.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="Blast" Node="EffectCenter">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_GUID>{FF3BADD5-6D0C-4A79-B250-547AE4D639B6}</FX_GUID>
+				<FX_CODE>1</FX_CODE>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

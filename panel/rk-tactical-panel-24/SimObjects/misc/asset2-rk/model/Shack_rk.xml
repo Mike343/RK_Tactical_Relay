@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{8f65344a-6efd-477b-ba76-85a7da2f1e88}" version="1.1">
+	<LODS>
+		<LOD MinSize="0" ModelFile="Shack_rk.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="AssetFire" Node="Center">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_GUID>{C16A27C2-79C2-412D-84F1-EE83C697E9BC}</FX_GUID>
+				<FX_CODE>1</FX_CODE>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

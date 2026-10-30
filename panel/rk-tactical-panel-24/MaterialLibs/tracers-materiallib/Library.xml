@@ -1,0 +1,135 @@
+<Library Version="1.1.0">
+	<Material Version="1.5.0" Name="Explosion_Atlas" Guid="{A4065FC1-F2DF-4864-8805-87FEAF843984}" Context="VFX editor" SurfaceType="UNDEFINED" Type="CODE_DIFFUSE" Metal="0.000000" Rough="1.000000" Opacity="1.000000" BlendMode="Alpha Blend">
+		<TagList/>
+		<FlagList/>
+		<TextureList>
+			<Texture FileName="TEXTURES\EXPLOSION_ATLAS.PNG.ktx2" Binding="MTL_BITMAP_DECAL0"/>
+		</TextureList>
+		<Attributes>
+			<Diffuse Red="0.991561" Green="0.552262" Blue="0.552262"/>
+			<Emissive Red="1.000000" Green="1.000000" Blue="1.000000"/>
+			<UVScale U="1.000000" V="1.000000"/>
+			<UVRotate>0.000000</UVRotate>
+			<TwoSided>TRUE</TwoSided>
+			<FlipBackface>FALSE</FlipBackface>
+			<NoCastShadow>FALSE</NoCastShadow>
+			<SurfaceTypeOnTransparent>FALSE</SurfaceTypeOnTransparent>
+			<Labels/>
+			<ExtraParameters>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.100000"/>
+				<Parameter Value="20.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="0.240000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="20.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+			</ExtraParameters>
+		</Attributes>
+	</Material>
+	<Material Version="1.5.0" Name="TracersRKHorizontal2" Guid="{E5CA1909-E1AD-4FFE-842C-1671E7D391B7}" Context="VFX editor" SurfaceType="UNDEFINED" Type="CODE_DIFFUSE" Metal="0.000000" Rough="1.000000" Opacity="1.000000" BlendMode="Alpha Blend">
+		<TagList/>
+		<FlagList/>
+		<TextureList>
+			<Texture FileName="TEXTURES\GREENTRACER.PNG.ktx2" Binding="MTL_BITMAP_DECAL0"/>
+		</TextureList>
+		<Attributes>
+			<Diffuse Red="1.000000" Green="1.000000" Blue="1.000000"/>
+			<Emissive Red="0.000000" Green="1.978903" Blue="0.978903"/>
+			<UVScale U="1.000000" V="1.000000"/>
+			<UVRotate>0.000000</UVRotate>
+			<TwoSided>TRUE</TwoSided>
+			<FlipBackface>FALSE</FlipBackface>
+			<NoCastShadow>FALSE</NoCastShadow>
+			<SurfaceTypeOnTransparent>FALSE</SurfaceTypeOnTransparent>
+			<Labels/>
+			<ExtraParameters>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.100000"/>
+				<Parameter Value="20.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="0.240000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="20.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+			</ExtraParameters>
+		</Attributes>
+	</Material>
+	<Material Version="1.5.0" Name="TracersRKHorizontal" Guid="{2F969E03-8B2A-40A9-BED9-3C715D28EACD}" Context="VFX editor" SurfaceType="UNDEFINED" Type="CODE_DIFFUSE" Metal="0.000000" Rough="1.000000" Opacity="1.000000" BlendMode="Alpha Blend">
+		<TagList/>
+		<FlagList/>
+		<TextureList>
+			<Texture FileName="TEXTURES\TRACER.PNG.ktx2" Binding="MTL_BITMAP_DECAL0"/>
+		</TextureList>
+		<Attributes>
+			<Diffuse Red="1.000000" Green="1.000000" Blue="1.000000"/>
+			<Emissive Red="1.000000" Green="0.978903" Blue="0.978903"/>
+			<UVScale U="1.000000" V="1.000000"/>
+			<UVRotate>0.000000</UVRotate>
+			<TwoSided>TRUE</TwoSided>
+			<FlipBackface>FALSE</FlipBackface>
+			<NoCastShadow>FALSE</NoCastShadow>
+			<SurfaceTypeOnTransparent>FALSE</SurfaceTypeOnTransparent>
+			<Labels/>
+			<ExtraParameters>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.100000"/>
+				<Parameter Value="20.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="0.240000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="1.000000"/>
+				<Parameter Value="20.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+				<Parameter Value="0.000000"/>
+			</ExtraParameters>
+		</Attributes>
+	</Material>
+</Library>
+

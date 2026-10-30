@@ -1,2 +1,12 @@
 *.wav binary
 *.exe binary
+
+panel/**/*.ktx2 filter=lfs diff=lfs merge=lfs -text
+panel/**/*.pck filter=lfs diff=lfs merge=lfs -text
+panel/**/*.bin filter=lfs diff=lfs merge=lfs -text
+panel/**/*.wav filter=lfs diff=lfs merge=lfs -text
+panel/**/*.wasm filter=lfs diff=lfs merge=lfs -text
+panel/**/*.zip filter=lfs diff=lfs merge=lfs -text
+
+# The panel package must stay byte for byte as built, because layout.json records exact file sizes.
+panel/** -text

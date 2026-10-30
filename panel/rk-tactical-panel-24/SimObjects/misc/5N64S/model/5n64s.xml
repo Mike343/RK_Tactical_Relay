@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{91ae6945-60fb-48af-88bb-e552eee915e4}" version="1.1">
+	<Animation name="Radar" guid="{62c8e505-70f9-4a6c-8fc2-f678ac778451}" type="Standard"/>
+	<LODS>
+		<LOD MinSize="30" ModelFile="5n64s_LOD00.gltf"/>
+		<LOD MinSize="15" ModelFile="5n64s_LOD01.gltf"/>
+		<LOD MinSize="8" ModelFile="5n64s_LOD02.gltf"/>
+		<LOD MinSize="3" ModelFile="5n64s_LOD03.gltf"/>
+		<LOD MinSize=".5" ModelFile="5n64s_LOD04.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Component ID="Radar" Node="Radar">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Radar</ANIM_NAME>
+				<ANIM_CODE>1</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>20</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

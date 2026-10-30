@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<SoundInfo Version="1.0">
+
+    <SimVarSounds>
+
+        <Sound
+            WwiseData="False"
+            WwiseEvent="custom_sound_01"
+            FileName="kan24"
+            ViewPoint="All"
+            NodeName="node0"
+            Continuous="True"
+            FullScaleDistance="250"
+            FadeOutType="2"
+            FadeOutTime="1.0"
+            SimVar="GROUND VELOCITY"
+            Units="knots"
+            Index="0">
+
+            <Range LowerBound="-1"/>
+
+        </Sound>
+
+    </SimVarSounds>
+
+</SoundInfo>

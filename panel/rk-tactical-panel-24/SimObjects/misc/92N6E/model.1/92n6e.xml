@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{7ee9d2e0-13ea-43cc-bb9b-d89ca8a12860}" version="1.1">
+	<LODS>
+		<LOD MinSize="0" ModelFile="92n6e.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="Cloud" Node="node0">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{229A89C6-1F1E-4D05-AE08-F1A3CAEC0BCE}</FX_GUID>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

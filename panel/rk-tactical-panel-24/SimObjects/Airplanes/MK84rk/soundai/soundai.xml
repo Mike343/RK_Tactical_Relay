@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SoundInfo Version="1.0">
+        <AnimationSounds>
+                <Sound WwiseData="False"
+                       WwiseEvent="BOMB_TIMER"
+                       FileName="timer"
+                       Continuous="True"
+                       ViewPoint="Outside"
+                       NodeName="SphereHelper"/>
+
+                <Sound WwiseData="False"
+                       WwiseEvent="BOMB_EXPLOSION"
+                       FileName="explosion"
+                       Continuous="False"
+                       ViewPoint="Outside"
+                       NodeName="SphereHelper"/>
+        </AnimationSounds>
+</SoundInfo>

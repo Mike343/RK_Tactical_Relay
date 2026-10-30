@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{2f9c6c97-f015-4249-addb-7732b3b64eed}" version="1.1">
+	<LODS>
+		<LOD MinSize="30" ModelFile="tps59_LOD00.gltf"/>
+		<LOD MinSize="15" ModelFile="tps59_LOD01.gltf"/>
+		<LOD MinSize="8" ModelFile="tps59_LOD02.gltf"/>
+		<LOD MinSize="3" ModelFile="tps59_LOD03.gltf"/>
+		<LOD MinSize=".5" ModelFile="tps59_LOD04.gltf"/>
+	</LODS>
+</ModelInfo>
+

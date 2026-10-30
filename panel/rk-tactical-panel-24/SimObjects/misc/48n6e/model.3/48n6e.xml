@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{77f65608-01c6-5d41-9bfe-62070128f93e}" version="1.1">
+	<Animation name="Launch" guid="{8210e494-354c-4843-9d85-ff608dd55e24}" type="Standard"/>
+	<Animation name="Blast" guid="{d637cef6-4552-4614-b876-27a6a76b4ca0}" type="Standard"/>
+	<Animation name="rotation" guid="{37bd540e-f68e-4e71-934c-3c93f32059c5}" type="Standard"/>
+	<Animation name="Exhaust" guid="{17cbd01c-8d8c-401f-b7da-0dc3b8d5aad2}" type="Standard"/>
+	<LODS>
+		<LOD MinSize="30" ModelFile="..\model\48n6e_LOD00.gltf"/>
+		<LOD MinSize="15" ModelFile="..\model\48n6e_LOD01.gltf"/>
+		<LOD MinSize="8" ModelFile="..\model\48n6e_LOD02.gltf"/>
+		<LOD MinSize="3" ModelFile="..\model\48n6e_LOD03.gltf"/>
+		<LOD MinSize=".5" ModelFile="..\model\48n6e_LOD04.gltf"/>
+	</LODS>
+	<Behaviors>
+		<AnimationTriggers Animation="Launch">
+			<EventTrigger NormalizedTime="0.01" Direction="Forward">
+				<SoundEvent WwiseEvent="custom_sound_01" Action="Play"/>
+			</EventTrigger>
+		</AnimationTriggers>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="Triumpf_Cell1_Visibility" Node="rotation">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<VISIBILITY_CODE>
+          (L:RK_SAM_TRIUMPF_4_VISIBLE, bool)
+        </VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="Triumpf_Cell1_Rotation" Node="rotation">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>rotation</ANIM_NAME>
+				<ANIM_CODE>
+          (L:RK_SAM_TRIUMPF_4_ROTATION, number)
+        </ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Triumpf_Cell1_Launch" Node="Pivot">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Launch</ANIM_NAME>
+				<ANIM_CODE>
+          (L:RK_SAM_TRIUMPF_4_LAUNCH, bool) 100 *
+        </ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>30</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Triumpf_Cell1_Blast" Node="BlastPlane">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Blast</ANIM_NAME>
+				<ANIM_CODE>
+          (L:RK_SAM_TRIUMPF_4_LAUNCH, bool) 100 *
+        </ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>30</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Triumpf_Exhaust" Node="Exhaust">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Exhaust</ANIM_NAME>
+				<ANIM_CODE>
+          (L:RK_SAM_TRIUMPF_4_LAUNCH, bool) 100 *
+        </ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>30</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="White_Exhaust" Node="Exhaust">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_GUID>{EB090E5F-7ABD-5D6C-92A6-FC9D4F476972}</FX_GUID>
+				<FX_CODE>(L:RK_SAM_TRIUMPF_4_VISIBLE, bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_QUAD">
+			<UseTemplate Name="ASOBO_CONTRAIL_QUAD_FX">
+				<FX_NAME>FX_CONTRAIL_QUAD_LEFT</FX_NAME>
+				<FX_NODE>Exhaust</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(L:RK_SAM_TRIUMPF_4_VISIBLE, bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_RIBBON">
+			<UseTemplate Name="ASOBO_CONTRAIL_RIBBON_FX">
+				<FX_NAME>FX_CONTRAIL_RIBBON_LEFT</FX_NAME>
+				<FX_NODE>Exhaust</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(L:RK_SAM_TRIUMPF_4_VISIBLE, bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

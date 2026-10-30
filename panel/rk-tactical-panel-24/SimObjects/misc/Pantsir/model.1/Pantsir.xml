@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{8ad9ac69-c516-4a7d-81f4-27fea67ade1b}" version="1.1">
+	<Animation name="GunElevation" guid="{150d59ac-e99d-58d9-8073-55aba75fb84e}" type="Standard"/>
+	<Animation name="MissileElevation" guid="{d5c5050a-f0d3-5a3b-aa92-c73bece6b014}" type="Standard"/>
+	<Animation name="Radar" guid="{367f2d93-4148-5c07-b9c3-6be1ddf73956}" type="Standard"/>
+	<Animation name="Turret" guid="{5d26e648-2ec3-5644-aa78-7164393588f9}" type="Standard"/>
+	<Animation name="Missile1" guid="{be61e5f3-9699-54a4-8083-83c18999b432}" type="Standard"/>
+	<Animation name="Missile2" guid="{145e97e5-637c-507e-b7ce-eeb3e1866f0c}" type="Standard"/>
+	<LODS>
+		<LOD MinSize="30" ModelFile="Pantsir_LOD00.gltf"/>
+		<LOD MinSize="15" ModelFile="Pantsir_LOD01.gltf"/>
+		<LOD MinSize="8" ModelFile="Pantsir_LOD02.gltf"/>
+		<LOD MinSize="3" ModelFile="Pantsir_LOD03.gltf"/>
+		<LOD MinSize=".5" ModelFile="Pantsir_LOD04.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="RadarAnim" Node="RadarRotator">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Radar</ANIM_NAME>
+				<ANIM_CODE>360 (L:RK_PANTSIRS2_RADAR_DEG, degrees) - 360 % 360 + 360 % 50 * 360 /</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Turret" Node="TurretRotate">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Turret</ANIM_NAME>
+				<ANIM_CODE>360 (L:RK_PANTSIRS2_PIVOT_DEG, degrees) - 360 % 360 + 360 % 100 * 360 /</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Gun" Node="GunElevation">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>GunElevation</ANIM_NAME>
+				<ANIM_CODE>(L:RK_PANTSIRS2_TILT_GUN_DEG, degrees) 0 max 85 min 50 * 85 /</ANIM_CODE>
+				<ANIM_LENGTH>50</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Missile" Node="MissileElevation">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>MissileElevation</ANIM_NAME>
+				<ANIM_CODE>(L:RK_PANTSIRS2_TILT_MISSILE_DEG, degrees) 0 max 75 min 50 * 75 /</ANIM_CODE>
+				<ANIM_LENGTH>50</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Missile1" Node="Model">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Missile1</ANIM_NAME>
+				<ANIM_CODE>(L:RK_PANTSIRS2_Missile1_Visibility, enum) 1 == 100 *</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>30</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Missile1_Visibility" Node="Model">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<VISIBILITY_CODE>
+                            (L:RK_PANTSIRS2_Missile1_Visibility, enum) 1 == 
+                        </VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="Missile2" Node="Model001">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Missile2</ANIM_NAME>
+				<ANIM_CODE>(L:RK_PANTSIRS2_Missile2_Visibility, enum) 1 == 100 *</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>30</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+				<ANIM_DELTA>0</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Missile2_Visibility" Node="Model001">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<VISIBILITY_CODE>
+                            (L:RK_PANTSIRS2_Missile2_Visibility, enum) 1 == 
+                        </VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_QUAD">
+			<UseTemplate Name="ASOBO_CONTRAIL_QUAD_FX">
+				<FX_NAME>FX_CONTRAIL_QUAD_LEFT</FX_NAME>
+				<FX_NODE>Exhaust</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(L:RK_PANTSIRS2_Missile1_Visibility, enum) 1 ==</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_RIBBON">
+			<UseTemplate Name="ASOBO_CONTRAIL_RIBBON_FX">
+				<FX_NAME>FX_CONTRAIL_RIBBON_LEFT</FX_NAME>
+				<FX_NODE>Exhaust</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(L:RK_PANTSIRS2_Missile1_Visibility, enum) 1 ==</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="Exhaust_Cloud" Node="Exhaust">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>(L:RK_PANTSIRS2_Missile1_Visibility, enum) 1 ==</FX_CODE>
+				<FX_GUID>{92577C09-030E-4E2F-BC9B-5E2477A3B83F}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="Exhaust_Flame" Node="Exhaust">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>(L:RK_PANTSIRS2_Missile1_Visibility, enum) 1 ==</FX_CODE>
+				<FX_GUID>{70697BB8-848A-443B-8088-6D85F1B4F06C}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_QUAD_2">
+			<UseTemplate Name="ASOBO_CONTRAIL_QUAD_FX">
+				<FX_NAME>FX_CONTRAIL_QUAD_LEFT</FX_NAME>
+				<FX_NODE>Exhaust1</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(L:RK_PANTSIRS2_Missile2_Visibility, enum) 1 ==</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_RIBBON_2">
+			<UseTemplate Name="ASOBO_CONTRAIL_RIBBON_FX">
+				<FX_NAME>FX_CONTRAIL_RIBBON_LEFT</FX_NAME>
+				<FX_NODE>Exhaust1</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(L:RK_PANTSIRS2_Missile2_Visibility, enum) 1 ==</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="Exhaust_Cloud_2" Node="Exhaust1">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>(L:RK_PANTSIRS2_Missile2_Visibility, enum) 1 ==</FX_CODE>
+				<FX_GUID>{92577C09-030E-4E2F-BC9B-5E2477A3B83F}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="Exhaust_Flame_2" Node="Exhaust1">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>(L:RK_PANTSIRS2_Missile2_Visibility, enum) 1 ==</FX_CODE>
+				<FX_GUID>{70697BB8-848A-443B-8088-6D85F1B4F06C}</FX_GUID>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

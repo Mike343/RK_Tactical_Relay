@@ -21,6 +21,8 @@ It isn't the original August 25 source and it isn't proven to be byte for byte i
 - `resilience.go`: panic recovery, connection limits, readiness and draining.
 - `web/` and `Dockerfile.web`: the server browser page and its nginx image.
 - `companion/`: the Windows Companion app. `companion/tests/` has a network test that runs two Companions against a relay.
+- `panel/`: the RK Tactical Panel, the MSFS package that runs in the simulator. Its large assets use Git LFS.
+- `tools/`: scripts that keep the panel, the bundled Companion and the Companion in step, and build the addon files.
 - `Dockerfile`, `deploy/k8s/`, `deploy.ps1` and `RUNBOOK.md`: containers, Kubernetes and deployment.
 - `reference/`: the original Node servers and the Companion header. I keep them for auditing and they aren't needed to build.
 - Tests are `*_test.go`, plus an optional `integration_test.py` that drives two Companions over real sockets.
@@ -193,3 +195,9 @@ go test -race -count=1 ./...
 The tests start the relay in process and talk to it over real sockets: handshake order, protocol rejection, snapshots, team tracking, combat routing, rate limits, proxy handling, the dashboard guard, flight history, and two relays sharing contacts and combat through a peer link.
 
 `python integration_test.py` runs the optional external wire test against a built binary. To audit the behavior, compare the files in `reference/` with `main.go`, `team.go` and the tests.
+
+## Panel
+
+The RK Tactical Panel, created by `=rk=`, is in `panel/`. It's the part that runs inside MSFS, and it talks to the Companion through SimConnect data areas whose names carry a version. `tools/Check-PanelCompatibility.ps1` confirms the panel and the Companion source agree, and that the Companion bundled inside the panel is the current one. `tools/Update-PanelLayout.ps1` keeps the panel's `layout.json` right after edits, and `tools/Update-BundledCompanion.ps1` refreshes the bundled Companion. See `panel/README.md`.
+
+`tools/Build-AddonPackage.ps1` builds everything that goes on the addon page: the panel zip, the Companion zip and its checksum. The relay server isn't part of that download. It runs in the Hangar Addons cluster.

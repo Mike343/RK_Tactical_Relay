@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{f10ee7ba-c0b4-4006-9775-8167c2990e99}" version="1.1">
+	<Animation name="Prop1" guid="{b734b0fb-0e87-42e0-b88c-e2ab0be41ab8}" type="Standard"/>
+	<Animation name="Prop1r" guid="{1c950f76-c60b-41f5-8ff9-337f8ec80dc3}" type="Standard"/>
+	<Animation name="Prop2" guid="{e3b99fb5-a61d-40f0-8b87-0edd5e87b8e9}" type="Standard"/>
+	<Animation name="Prop2r" guid="{579fb1b4-c0b9-4b29-a760-ccd31e34f666}" type="Standard"/>
+	<Animation name="Prop3" guid="{1ba7b74e-420c-4482-967e-999446119edc}" type="Standard"/>
+	<Animation name="Prop3r" guid="{d36120cc-26b4-4ad1-a502-5ef0c2ea74ce}" type="Standard"/>
+	<Animation name="Prop4" guid="{0a0d7962-7a5e-49de-bb01-9baceb254f5c}" type="Standard"/>
+	<Animation name="Prop4r" guid="{8575e045-424d-4c9a-b89d-a772b29608d8}" type="Standard"/>
+	<LODS>
+		<LOD MinSize="6" ModelFile="TU95.gltf"/>
+		<LOD minSize="2.4" ModelFile="TU95_LOD01.gltf"/>
+		<LOD minSize="1" ModelFile="TU95_LOD02.gltf"/>
+		<LOD minSize=".4" ModelFile="TU95_LOD03.gltf"/>
+		<LOD minSize="0.2" ModelFile="TU95_LOD04.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="Prop1" Node="Prop1">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Prop1</ANIM_NAME>
+				<ANIM_CODE>1</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Prop1r" Node="Prop1r">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Prop1r</ANIM_NAME>
+				<ANIM_CODE>1</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Prop2" Node="Prop2">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Prop2</ANIM_NAME>
+				<ANIM_CODE>1</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Prop2r" Node="Prop2r">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Prop2r</ANIM_NAME>
+				<ANIM_CODE>1</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Prop3" Node="Prop3">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Prop3</ANIM_NAME>
+				<ANIM_CODE>1</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Prop3r" Node="Prop3r">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Prop3r</ANIM_NAME>
+				<ANIM_CODE>1</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Prop4" Node="Prop4">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Prop4</ANIM_NAME>
+				<ANIM_CODE>1</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Prop4r" Node="Prop4r">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Prop4r</ANIM_NAME>
+				<ANIM_CODE>1</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>0</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_QUAD">
+			<UseTemplate Name="ASOBO_CONTRAIL_QUAD_FX">
+				<FX_NAME>FX_CONTRAIL_QUAD_LEFT</FX_NAME>
+				<FX_NODE>Prop1e</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_RIBBON">
+			<UseTemplate Name="ASOBO_CONTRAIL_RIBBON_FX">
+				<FX_NAME>FX_CONTRAIL_RIBBON_LEFT</FX_NAME>
+				<FX_NODE>Prop1e</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_QUAD2">
+			<UseTemplate Name="ASOBO_CONTRAIL_QUAD_FX">
+				<FX_NAME>FX_CONTRAIL_QUAD_LEFT</FX_NAME>
+				<FX_NODE>Prop2e</FX_NODE>
+				<FX_ENGINE_ID>2</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_RIBBON2">
+			<UseTemplate Name="ASOBO_CONTRAIL_RIBBON_FX">
+				<FX_NAME>FX_CONTRAIL_RIBBON_LEFT</FX_NAME>
+				<FX_NODE>Prop2e</FX_NODE>
+				<FX_ENGINE_ID>2</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_QUAD3">
+			<UseTemplate Name="ASOBO_CONTRAIL_QUAD_FX">
+				<FX_NAME>FX_CONTRAIL_QUAD_LEFT</FX_NAME>
+				<FX_NODE>Prop3e</FX_NODE>
+				<FX_ENGINE_ID>3</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_RIBBON3">
+			<UseTemplate Name="ASOBO_CONTRAIL_RIBBON_FX">
+				<FX_NAME>FX_CONTRAIL_RIBBON_LEFT</FX_NAME>
+				<FX_NODE>Prop3e</FX_NODE>
+				<FX_ENGINE_ID>3</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_QUAD4">
+			<UseTemplate Name="ASOBO_CONTRAIL_QUAD_FX">
+				<FX_NAME>FX_CONTRAIL_QUAD_LEFT</FX_NAME>
+				<FX_NODE>Prop4e</FX_NODE>
+				<FX_ENGINE_ID>4</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_RIBBON4">
+			<UseTemplate Name="ASOBO_CONTRAIL_RIBBON_FX">
+				<FX_NAME>FX_CONTRAIL_RIBBON_LEFT</FX_NAME>
+				<FX_NODE>Prop4e</FX_NODE>
+				<FX_ENGINE_ID>4</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

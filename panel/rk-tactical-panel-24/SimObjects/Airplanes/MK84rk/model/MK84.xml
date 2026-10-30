@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{beaf4515-e44d-4f0b-8aaf-1d72cec3e71b}" version="1.1">
+	<LODS>
+		<LOD MinSize="0" ModelFile="MK84.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="POINT" Node="Bomb">
+			<UseTemplate Name="ASOBO_GT_Code">
+				<CODE>
+                                        (A:PLANE ALT ABOVE GROUND, feet) 2 &lt;=
+                                        (A:GROUND VELOCITY, knots) 1 &gt; and
+                                        (O:POINT_FREEZED, Bool) ! and
+                                        if{
+                                                1 (&gt;O:POINT_FREEZED, Bool)
+                                                1 (&gt;K:FREEZE_LATITUDE_LONGITUDE_SET)
+                                                1 (&gt;K:FREEZE_ALTITUDE_SET)
+                                                1 (&gt;K:FREEZE_ATTITUDE_SET)
+                                        }
+                                </CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_FIRE_SMOKE" Node="BombHelper">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_GUID>{15B35478-6321-4480-8642-EB44248318E2}</FX_GUID>
+				<FX_CODE>
+                                        (A:PLANE ALT ABOVE GROUND, feet) 20 &lt;=
+                                </FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_MK84" Node="BombHelper">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_GUID>{6F546AA4-AC3C-405A-994A-600681C998E4}</FX_GUID>
+				<FX_CODE>
+                                        (A:PLANE ALT ABOVE GROUND, feet) 100 &lt;=
+                                        (O:MK84_T0, seconds) 0 == and
+                                        if{ (E:SIMULATION TIME, seconds) (&gt;O:MK84_T0, seconds) }
+                
+                                        (O:MK84_T0, seconds) 0 &gt;
+                                        if{
+                                                (E:SIMULATION TIME, seconds) (O:MK84_T0, seconds) - 0.5 &lt;
+                                        } els{ 0 }
+                                </FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="BOMB_VIS_AGL" Node="Bomb">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<ONCE>False</ONCE>
+				<VISIBILITY_CODE>
+                                        (A:PLANE ALT ABOVE GROUND, feet) 20 &gt;
+                                </VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright (c) Asobo Studio, All rights reserved. www.asobostudio.com -->
+
+<SoundInfo Version="0.1">
+
+	<WwisePackages>
+		<MainPackage Name="Asobo_FA18E_AI"/>
+	</WwisePackages>
+
+  <EngineSoundPresets>
+    <Sound WwiseEvent="Combustion" ConeHeading="180" RPMMin="1" WwiseData="true" EngineIndex="1" >
+		<WwiseRTPC SimVar="TURB ENG N1" Units="percent" Index="1" RTPCName="SIMVAR_TURB_ENG_N1"/>
+	</Sound>
+    <Sound WwiseEvent="Combustion" ConeHeading="180" RPMMin="1" WwiseData="true" EngineIndex="2" >
+		<WwiseRTPC SimVar="TURB ENG N1" Units="percent" Index="2" RTPCName="SIMVAR_TURB_ENG_N1"/>
+	</Sound>
+    <Sound WwiseEvent="JetWhine" WwiseData="true" EngineIndex="1" RPMMin="1"/>
+    <Sound WwiseEvent="JetWhine" WwiseData="true" EngineIndex="2" RPMMin="1"/>
+  </EngineSoundPresets>
+  
+  <GroundSounds>
+    <Sound WwiseEvent="CENTER_TOUCHDOWN" FadeOutType="2" FadeOutTime="0.5" WwiseData="true" />
+	<Sound WwiseEvent="LEFT_TOUCHDOWN" FadeOutType="2" FadeOutTime="0.5" WwiseData="true" />  
+    <Sound WwiseEvent="RIGHT_TOUCHDOWN" FadeOutType="2" FadeOutTime="0.5" WwiseData="true" />
+  </GroundSounds>
+  
+  <MiscellaneousSounds>
+
+  </MiscellaneousSounds>
+  
+  <SimVarSounds> 
+
+  <!-- ENGINES ====================================================================== -->    
+  
+    <Sound WwiseData="true" WwiseEvent="apu" SimVar="APU PCT RPM" Units="PERCENT" Index="0">
+      <WwiseRTPC SimVar="APU PCT RPM" Units="PERCENT" Index="0" RTPCName="SIMVAR_APU_PCT_RPM" />
+      <Range LowerBound="1.0" />
+    </Sound>
+	
+	<Sound WwiseData="true" WwiseEvent="eng1_afterburner" ConeHeading="180" SimVar="TURB ENG N1" Units="PERCENT" Index="1" FadeOutTime="1" FadeOutType="2">
+	  <Range LowerBound="60" />
+	  <WwiseRTPC SimVar="TURB ENG N1" Units="PERCENT" Index="1" RTPCName="SIMVAR_TURB_ENG_N1"/>
+    </Sound>
+	
+	<Sound WwiseData="true" WwiseEvent="eng2_afterburner" ConeHeading="180" SimVar="TURB ENG N1" Units="PERCENT" Index="2" FadeOutTime="1" FadeOutType="2">
+	  <Range LowerBound="60" />
+	  <WwiseRTPC SimVar="TURB ENG N1" Units="PERCENT" Index="2" RTPCName="SIMVAR_TURB_ENG_N1"/>
+    </Sound>
+	
+	<Sound WwiseData="true" WwiseEvent="eng_faraway_back" ConeHeading="180" SimVar="TURB ENG N1" Units="PERCENT" Index="1" FadeOutTime="1" FadeOutType="2">
+	  <Range LowerBound="1" />
+      <WwiseRTPC SimVar="GENERAL ENG PCT MAX RPM" Units="PERCENT" Index="1" RTPCName="SIMVAR_GENERAL_ENG_PCT_MAX_RPM" />  
+	  <WwiseRTPC SimVar="TURB ENG N1" Units="PERCENT" Index="1" RTPCName="SIMVAR_TURB_ENG_N1"/>
+	  <WwiseRTPC SimVar="PLANE ALT ABOVE GROUND" Units="FEET" Index="0" RTPCName="SIMVAR_PLANE_ALT_ABOVE_GROUND" />
+    </Sound>
+	
+	<Sound WwiseData="true" WwiseEvent="eng_faraway_front" ConeHeading="0" SimVar="TURB ENG N1" Units="PERCENT" Index="1" FadeOutTime="1" FadeOutType="2">
+	  <Range LowerBound="1" />
+      <WwiseRTPC SimVar="GENERAL ENG PCT MAX RPM" Units="PERCENT" Index="1" RTPCName="SIMVAR_GENERAL_ENG_PCT_MAX_RPM" />  
+	  <WwiseRTPC SimVar="TURB ENG N1" Units="PERCENT" Index="1" RTPCName="SIMVAR_TURB_ENG_N1"/>
+	  <WwiseRTPC SimVar="PLANE ALT ABOVE GROUND" Units="FEET" Index="0" RTPCName="SIMVAR_PLANE_ALT_ABOVE_GROUND" />
+    </Sound>
+	
+  </SimVarSounds> 
+
+</SoundInfo>

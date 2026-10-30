@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{c734ff60-4bde-4bd2-b0ce-19d8f96d8c2f}" version="1.1">
+	<Animation name="Pivot" guid="{c39dd4ab-4a66-4b93-bfc4-8ea7d9bb2c91}" type="Standard"/>
+	<Animation name="Tilt" guid="{084a36b2-1937-43db-a1f4-8bbdcf6e0280}" type="Standard"/>
+	<LODS>
+		<LOD MinSize="0" ModelFile="Cram.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Component ID="Rotate" Node="Pivot">
+			<UseTemplate Name="ASOBO_GT_Anim_Code">
+				<ANIM_NAME>Pivot</ANIM_NAME>
+				<ANIM_CODE>(L:RK_CRAM_2_PIVOT_DEG, degrees)</ANIM_CODE>
+				<ANIM_LENGTH>360</ANIM_LENGTH>
+				<ANIM_LAG>80</ANIM_LAG>
+				<ANIM_WRAP>1</ANIM_WRAP>
+			</UseTemplate>
+		</Component>
+		<Component ID="Pitch" Node="Tilt">
+			<UseTemplate Name="ASOBO_GT_Anim_Code">
+				<ANIM_NAME>Tilt</ANIM_NAME>
+				<ANIM_CODE>(L:RK_CRAM_2_TILT_DEG, degrees)</ANIM_CODE>
+				<ANIM_LENGTH>80</ANIM_LENGTH>
+				<ANIM_LAG>80</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

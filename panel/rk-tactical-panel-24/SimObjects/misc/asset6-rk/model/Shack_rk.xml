@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{4115b2df-e937-4e0c-babb-28074bfba8d4}" version="1.1">
+	<LODS>
+		<LOD MinSize="0" ModelFile="Shack_rk.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+	</Behaviors>
+</ModelInfo>
+

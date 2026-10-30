@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{7d046c78-73e9-4b34-a519-4e8b718c5c6f}" version="1.1">
+	<LODS>
+		<LOD MinSize="0" ModelFile="Frame_rk.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+	</Behaviors>
+</ModelInfo>
+

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo version="1.1" guid="{29b9e2e0-fbd9-418b-ad72-d76360885ce9}">
+	<LODS>
+		<LOD MinSize="30" ModelFile="b21.gltf"/>
+		<LOD MinSize="15" ModelFile="b21_LOD01.gltf"/>
+		<LOD MinSize="8" ModelFile="b21_LOD02.gltf"/>
+		<LOD MinSize="3" ModelFile="b21_LOD03.gltf"/>
+		<LOD MinSize=".5" ModelFile="b21_LOD04.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="FX_CONTRAIL_QUAD">
+			<UseTemplate Name="ASOBO_CONTRAIL_QUAD_FX">
+				<FX_NAME>FX_CONTRAIL_QUAD_LEFT</FX_NAME>
+				<FX_NODE>Exhaust_L</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_RIBBON">
+			<UseTemplate Name="ASOBO_CONTRAIL_RIBBON_FX">
+				<FX_NAME>FX_CONTRAIL_RIBBON_LEFT</FX_NAME>
+				<FX_NODE>Exhaust_L</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_QUAD">
+			<UseTemplate Name="ASOBO_CONTRAIL_QUAD_FX">
+				<FX_NAME>FX_CONTRAIL_QUAD_RIGHT</FX_NAME>
+				<FX_NODE>Exhaust_R</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+		<Component ID="FX_CONTRAIL_RIBBON">
+			<UseTemplate Name="ASOBO_CONTRAIL_RIBBON_FX">
+				<FX_NAME>FX_CONTRAIL_RIBBON_RIGHT</FX_NAME>
+				<FX_NODE>Exhaust_R</FX_NODE>
+				<FX_ENGINE_ID>1</FX_ENGINE_ID>
+				<FX_CODE>(A:GENERAL ENG COMBUSTION:1, Bool)</FX_CODE>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

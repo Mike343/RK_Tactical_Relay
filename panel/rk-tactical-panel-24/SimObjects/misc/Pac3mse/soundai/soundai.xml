@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SoundInfo Version="1.0">
+    <SimVarSounds>
+        <Sound
+            WwiseEvent="custom_sound_01"
+            WwiseData="False"
+            FileName="patriot_launch"
+            Animation="Launch"
+            Model="Exterior"
+            ViewPoint="Outside"
+            Continuous="False"
+            FullScaleDistance="150">
+            <Range LowerBound="0.01" UpperBound="1.0"/>
+        </Sound>
+    </SimVarSounds>
+</SoundInfo>

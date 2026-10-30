@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{459b3254-11f9-4f7a-ba9b-74dec952e813}" version="1.1">
+	<LODS>
+		<LOD MinSize="0" ModelFile="Ford F-150_LOD0.gltf"/>
+		<LOD MinSize="15" ModelFile="Ford F-150_LOD1.gltf"/>
+		<LOD MinSize="8" ModelFile="Ford F-150_LOD2.gltf"/>
+		<LOD MinSize="3" ModelFile="Ford F-150_LOD3.gltf"/>
+		<LOD MinSize=".5" ModelFile="Ford F-150_LOD4.gltf"/>
+	</LODS>
+</ModelInfo>
+

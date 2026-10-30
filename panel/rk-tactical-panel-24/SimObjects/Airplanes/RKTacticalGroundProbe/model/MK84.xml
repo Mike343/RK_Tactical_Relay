@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{1c826a63-4e01-4e72-a5ef-f8c2a20b8abd}" version="1.1">
+	<LODS>
+		<LOD MinSize="0" ModelFile="MK84.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Component ID="PROBE_HIDE" Node="Bomb">
+			<UseTemplate Name="ASOBO_GT_Visibility_Code">
+				<VISIBILITY_CODE>0</VISIBILITY_CODE>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

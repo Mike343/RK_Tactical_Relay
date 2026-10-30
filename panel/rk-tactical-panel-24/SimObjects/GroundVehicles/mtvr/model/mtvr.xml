@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo guid="{38561c09-3e11-4971-b284-3e0fe6ca3167}" version="1.1">
+	<LODS>
+		<LOD MinSize="0" ModelFile="mtvr.gltf"/>
+		<LOD MinSize="15" ModelFile="mtvr_LOD01.gltf"/>
+		<LOD MinSize="8" ModelFile="mtvr_LOD02.gltf"/>
+		<LOD MinSize="3" ModelFile="mtvr_LOD03.gltf"/>
+		<LOD MinSize=".5" ModelFile="mtvr_LOD04.gltf"/>
+	</LODS>
+</ModelInfo>
+
