@@ -108,6 +108,14 @@ void MultiplayerClient::updateLocalState(
     localStateValid_ = valid;
 }
 
+void MultiplayerClient::setDisplayName(const std::wstring& name) {
+    {
+        std::lock_guard<std::mutex> lock(nameMutex_);
+        config_.displayName = name;
+    }
+    reconnectRequested_ = true;
+}
+
 bool MultiplayerClient::connected() const { return connected_.load(); }
 int MultiplayerClient::remotePlayerCount() const {
     return remotePlayerCount_.load();
@@ -260,6 +268,11 @@ void MultiplayerClient::sendLoop() {
             }
         }
         if (!connected_) { break; }
+
+        if (reconnectRequested_.exchange(false)) {
+            std::cout << "Pilot name changed; reconnecting.\n";
+            break;
+        }
 
         if (nowMs() - lastReceiveMs_.load() > kLivenessMs) {
             std::cout << "Relay stopped answering.\n";
@@ -451,6 +464,7 @@ bool MultiplayerClient::sendText(const std::string& text) {
 }
 
 std::string MultiplayerClient::makeHello() const {
+    std::lock_guard<std::mutex> lock(nameMutex_);
     std::ostringstream out;
     out << "{\"type\":\"hello\",\"protocol\":3"
         << ",\"id\":\"" << jsonEscape(utf8(config_.playerId)) << "\""

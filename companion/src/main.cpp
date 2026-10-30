@@ -301,11 +301,43 @@ HRESULT publishCombatInbox(HANDLE simConnect,
         &event);
 }
 
-void processTestKeys(rk::AudioEngine& audio, bool& testLoop) {
+bool consoleInput() {
+    DWORD mode = 0;
+    return GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &mode) != FALSE;
+}
+
+std::wstring readConsoleLine() {
+    wchar_t buffer[256]{};
+    DWORD read = 0;
+    if (!ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), buffer, 255, &read, nullptr)) {
+        return {};
+    }
+    return rk::cleanDisplayName(std::wstring(buffer, read));
+}
+
+void askForName(rk::CompanionConfig& config, rk::MultiplayerClient* multiplayer) {
+    std::wcout << L"\nPilot name other players will see (Enter keeps \""
+        << config.displayName << L"\"): " << std::flush;
+    const std::wstring entered = readConsoleLine();
+    if (entered.empty()) { return; }
+    config.displayName = entered;
+    if (multiplayer) { multiplayer->setDisplayName(entered); }
+    if (rk::saveDisplayName(config, entered)) {
+        std::wcout << L"Saved to companion.ini as " << entered << L".\n";
+    } else {
+        std::wcout << L"Using " << entered
+            << L" for now, but companion.ini couldn't be written. Move this folder somewhere you can write to.\n";
+    }
+}
+
+void processTestKeys(rk::AudioEngine& audio, bool& testLoop,
+    rk::CompanionConfig& config, rk::MultiplayerClient& multiplayer) {
     if (!_kbhit()) { return; }
     const int key = _getch();
     if (key == 'q' || key == 'Q') {
         g_stopRequested = true;
+    } else if (key == 'n' || key == 'N') {
+        askForName(config, &multiplayer);
     } else if (key == 'l' || key == 'L') {
         audio.playLaunch();
         std::cout << "Launch warning test.\n";
@@ -328,11 +360,19 @@ int wmain() {
             << std::hex << static_cast<unsigned long>(comResult)
             << std::dec << "\n";
     }
-    const rk::CompanionConfig config = rk::loadConfig();
+    rk::CompanionConfig config = rk::loadConfig();
+    rk::applySimConnectConfig(config);
 
     std::wcout << L"RK Tactical Companion " RK_COMPANION_VERSION L" SHARED WEAPONS AND VFX\n"
         << L"Stable Windows audio + multiplayer transport\n"
-        << L"L = test launch sound, M = toggle active warning, Q = quit\n";
+        << L"L = test launch sound, M = toggle active warning, N = change pilot name, Q = quit\n";
+    if (config.simConnectHost.empty()) {
+        std::wcout << L"MSFS is expected on this PC.\n";
+    } else {
+        std::wcout << L"MSFS is expected on another PC: " << config.simConnectHost
+            << L":" << config.simConnectPort << L"\n";
+    }
+    if (config.askForName && consoleInput()) { askForName(config, nullptr); }
 
     rk::AudioEngine audio;
     if (!audio.initialize(config.launchSoundPath, config.activeSoundPath,
@@ -355,17 +395,28 @@ int wmain() {
     }
 
     bool testLoop = false;
+    int failedOpens = 0;
     while (!g_stopRequested) {
         HANDLE simConnect = nullptr;
         const HRESULT openResult = SimConnect_Open(&simConnect,
             "RK Tactical Companion", nullptr, 0, nullptr, 0);
         if (FAILED(openResult)) {
+            if (failedOpens++ % 15 == 0) {
+                if (config.simConnectHost.empty()) {
+                    std::cout << "Waiting for MSFS on this PC...\n";
+                } else {
+                    std::wcout << L"Waiting for MSFS at " << config.simConnectHost << L":"
+                        << config.simConnectPort << L". Check that it is running, that SimConnect.xml "
+                        L"on that PC has an IPv4 address and port, and that the firewall allows the port.\n";
+                }
+            }
             audio.stopBattlefield();
-            processTestKeys(audio, testLoop);
+            processTestKeys(audio, testLoop, config, multiplayer);
             std::this_thread::sleep_for(std::chrono::seconds(2));
             continue;
         }
 
+        failedOpens = 0;
         std::cout << "SimConnect connected.\n";
         AppState app{};
         app.audio = &audio;
@@ -456,7 +507,7 @@ int wmain() {
                     + std::chrono::seconds(1);
             }
             if(std::chrono::steady_clock::now()-app.lastBattleTelemetry>std::chrono::seconds(1)) audio.stopBattlefield();
-            processTestKeys(audio, testLoop);
+            processTestKeys(audio, testLoop, config, multiplayer);
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
 

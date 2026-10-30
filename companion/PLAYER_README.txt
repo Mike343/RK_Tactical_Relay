@@ -24,3 +24,17 @@ If it doesn't connect
 Check that relay_url in companion.ini is the address you were given, and that your firewall allows the app out. If your network blocks port 8787, ask for the encrypted wss:// address and use that instead.
 
 Everyone has to run the same Companion version. Live pilots and recent flights are shown at https://rk.hangaraddons.com.
+
+Your pilot name
+
+The first time you run it, the window asks what name other pilots should see. Press N any time to change it. It is saved in companion.ini.
+
+Running it on a different PC
+
+If you want MSFS to have the whole PC to itself, you can run the Companion on a second PC on your network. The RK Tactical Panel stays in MSFS and only the Companion moves.
+
+1. On the PC running MSFS, copy SimConnect.xml.example into the MSFS settings folder and rename it SimConnect.xml. For the Store or Xbox version of MSFS 2020 that folder is %LOCALAPPDATA%\Packages\Microsoft.FlightSimulator_8wekyb3d8bbwe\LocalCache, and for Steam it is %APPDATA%\Microsoft Flight Simulator. MSFS 2024 uses a similarly named folder.
+2. Open the file and set Address to the IPv4 address of the MSFS PC. Allow the port (500 by default) through that PC's firewall, then restart MSFS.
+3. On the PC running the Companion, set simconnect_host in companion.ini to the same address.
+
+The warning sounds play on the PC running the Companion, so use its speakers or headphones. SimConnect isn't encrypted, so only do this on your own network or a VPN.

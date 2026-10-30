@@ -92,3 +92,42 @@ run a relay or choose a room.
 - `relay_url` must start with `ws://` or `wss://`. Names are trimmed and capped, and a `player_id` that the relay would refuse is cleaned.
 
 `tests/Run-NetSmoke.ps1` builds a small test that starts two clients against a relay, checks that they see each other and that a launch crosses, and with `-Reconnect` checks recovery after you restart the relay. It needs a relay on `ws://127.0.0.1:18787` by default.
+
+## Changes in 1.5.2
+
+- **MSFS on another PC.** Set `simconnect_host` (and `simconnect_port`, 500 by default) in `companion.ini` and the Companion writes a `SimConnect.cfg` beside the exe and connects over your network. Leave `simconnect_host` blank for MSFS on the same PC. A `SimConnect.cfg` the Companion didn't write is never touched or removed.
+- **Pilot name in the app.** The first run asks for a name and saves it to `companion.ini`. Press `N` any time to change it, and the Companion reconnects with the new name.
+
+### Running the Companion on a different PC
+
+The Companion talks to MSFS through SimConnect, which works across a network. On the PC running MSFS, create a `SimConnect.xml` with an IPv4 endpoint and open its TCP port in the firewall:
+
+```xml
+<?xml version="1.0" encoding="Windows-1252"?>
+<SimBase.Document Type="SimConnect" version="1,0">
+  <Descr>SimConnect Server Configuration</Descr>
+  <Filename>SimConnect.xml</Filename>
+  <Disabled>False</Disabled>
+  <SimConnect.Comm>
+    <Descr>RK Tactical Companion (remote)</Descr>
+    <Protocol>IPv4</Protocol>
+    <Scope>global</Scope>
+    <Address>192.168.1.50</Address>
+    <Port>500</Port>
+    <MaxClients>64</MaxClients>
+    <MaxRecvSize>41088</MaxRecvSize>
+    <DisableNagle>False</DisableNagle>
+  </SimConnect.Comm>
+</SimBase.Document>
+```
+
+Use the address of the MSFS PC. The file goes in the MSFS settings folder: for the Store or Xbox version of MSFS 2020 it's `%LOCALAPPDATA%\Packages\Microsoft.FlightSimulator_8wekyb3d8bbwe\LocalCache`, and for Steam it's `%APPDATA%\Microsoft Flight Simulator`. MSFS 2024 uses a similarly named folder. Restart MSFS after adding it, then set `simconnect_host` on the other PC to the same address.
+
+Things to know:
+
+- The warning sounds play on the PC running the Companion, so use that PC's speakers or headphones.
+- SimConnect isn't encrypted. Use it on your own network or a VPN.
+- The RK Tactical Panel still runs inside MSFS. Only the Companion moves.
+- Remote mode hasn't been tested with MSFS yet.
+
+`tests/Run-ConfigSmoke.ps1` checks the config behavior, including the `SimConnect.cfg` it writes and removes.

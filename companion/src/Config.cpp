@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <system_error>
 
 namespace rk {
 namespace {
@@ -87,15 +88,100 @@ std::wstring loadOrCreatePlayerId(const std::filesystem::path& directory,
     return value;
 }
 
+bool isManagedSimConnectCfg(const std::string& text) {
+    std::istringstream lines(text);
+    std::string line;
+    int count = 0;
+    while (std::getline(lines, line)) {
+        if (!line.empty() && line.back() == '\r') { line.pop_back(); }
+        if (line.empty()) { continue; }
+        const bool expected = (count == 0 && line == "[SimConnect]")
+            || (count == 1 && line == "Protocol=IPv4")
+            || (count == 2 && line.rfind("Address=", 0) == 0)
+            || (count == 3 && line.rfind("Port=", 0) == 0);
+        if (!expected) { return false; }
+        ++count;
+    }
+    return count == 4;
+}
+
 } // namespace
+
+std::wstring cleanDisplayName(const std::wstring& value) {
+    std::wstring result;
+    for (const wchar_t c : value) {
+        if (c >= 32 && c != 127) { result.push_back(c); }
+    }
+    result = trim(result);
+    if (result.size() > 40) { result.resize(40); }
+    return result;
+}
+
+bool validSimConnectHost(const std::wstring& host) {
+    if (host.empty() || host.size() > 253) { return false; }
+    for (const wchar_t c : host) {
+        const bool allowed = (c >= L'A' && c <= L'Z') || (c >= L'a' && c <= L'z')
+            || (c >= L'0' && c <= L'9') || c == L'.' || c == L'-';
+        if (!allowed) { return false; }
+    }
+    return host != L"0.0.0.0" && host != L"255.255.255.255"
+        && host.front() != L'.' && host.back() != L'.';
+}
+
+bool saveDisplayName(const CompanionConfig& config, const std::wstring& name) {
+    const std::wstring ini = (config.executableDirectory / L"companion.ini").wstring();
+    return WritePrivateProfileStringW(L"companion", L"display_name",
+        name.c_str(), ini.c_str()) != FALSE;
+}
+
+void applySimConnectConfig(const CompanionConfig& config) {
+    SetCurrentDirectoryW(config.executableDirectory.c_str());
+    const auto path = config.executableDirectory / L"SimConnect.cfg";
+    if (!config.simConnectHost.empty()) {
+        std::string host;
+        for (const wchar_t c : config.simConnectHost) { host.push_back(static_cast<char>(c)); }
+        std::ofstream out(path, std::ios::binary | std::ios::trunc);
+        out << "[SimConnect]\r\nProtocol=IPv4\r\nAddress=" << host
+            << "\r\nPort=" << config.simConnectPort << "\r\n";
+        if (!out) {
+            std::wcerr << L"Unable to write SimConnect.cfg, so the remote MSFS address won't be used.\n";
+        }
+        return;
+    }
+    std::ifstream in(path, std::ios::binary);
+    if (!in) { return; }
+    std::stringstream buffer;
+    buffer << in.rdbuf();
+    in.close();
+    if (isManagedSimConnectCfg(buffer.str())) {
+        std::error_code ignored;
+        std::filesystem::remove(path, ignored);
+    }
+}
 
 CompanionConfig loadConfig() {
     CompanionConfig config;
     config.executableDirectory = executableDirectory();
     const auto ini = config.executableDirectory / L"companion.ini";
-    config.displayName = trim(readIni(ini, L"display_name", L"RK Pilot"));
+    const std::wstring configuredName = trim(readIni(ini, L"display_name", L""));
+    config.askForName = configuredName.empty() || configuredName == L"RK Client"
+        || configuredName == L"RK Pilot";
+    config.displayName = cleanDisplayName(configuredName);
     if (config.displayName.empty()) { config.displayName = L"RK Pilot"; }
-    if (config.displayName.size() > 40) { config.displayName.resize(40); }
+    const std::wstring host = trim(readIni(ini, L"simconnect_host", L""));
+    if (!host.empty() && host != L"localhost" && host != L"127.0.0.1") {
+        if (validSimConnectHost(host)) {
+            config.simConnectHost = host;
+        } else {
+            std::wcerr << L"simconnect_host isn't a valid address, so MSFS is expected on this PC: "
+                << host << L"\n";
+        }
+    }
+    try {
+        const int port = std::stoi(readIni(ini, L"simconnect_port", L"500"));
+        if (port >= 1 && port <= 65535) { config.simConnectPort = port; }
+    } catch (...) {
+    }
     config.relayUrl = trim(readIni(ini, L"relay_url", L""));
     if (!config.relayUrl.empty() && !validRelayUrl(config.relayUrl)) {
         std::wcerr << L"relay_url must start with ws:// or wss://, so multiplayer is off: "

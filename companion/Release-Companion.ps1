@@ -30,6 +30,7 @@ foreach ($name in "RKTacticalCompanion.exe", "companion.ini", "SimConnect.dll", 
     Copy-Item (Join-Path $out $name) $folder -Recurse
 }
 Copy-Item "PLAYER_README.txt" (Join-Path $folder "README.txt")
+Copy-Item "SimConnect.xml.example" $folder
 
 $zip = Join-Path $dist "RKTacticalCompanion-$version.zip"
 Remove-Item $zip -Force -ErrorAction SilentlyContinue

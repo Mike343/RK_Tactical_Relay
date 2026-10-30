@@ -21,6 +21,7 @@ public:
     void start();
     void stop();
     void updateLocalState(const UserAircraftState& state, bool valid);
+    void setDisplayName(const std::wstring& name);
     bool connected() const;
     int remotePlayerCount() const;
     bool consumeSnapshot(MultiplayerSnapshotV1& snapshot);
@@ -50,6 +51,8 @@ private:
     std::atomic<int> remotePlayerCount_{0};
     std::atomic<long long> lastReceiveMs_{0};
     std::atomic<bool> receiverRunning_{false};
+    std::atomic<bool> reconnectRequested_{false};
+    mutable std::mutex nameMutex_;
     std::mutex snapshotMutex_;
     MultiplayerSnapshotV1 latestSnapshot_{};
     std::uint32_t consumedSnapshotSequence_ = 0;

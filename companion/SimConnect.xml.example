@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<SimBase.Document Type="SimConnect" version="1,0">
+  <Descr>SimConnect Server Configuration</Descr>
+  <Filename>SimConnect.xml</Filename>
+  <Disabled>False</Disabled>
+  <SimConnect.Comm>
+    <Descr>RK Tactical Companion (remote)</Descr>
+    <Protocol>IPv4</Protocol>
+    <Scope>global</Scope>
+    <Address>192.168.1.50</Address>
+    <Port>500</Port>
+    <MaxClients>64</MaxClients>
+    <MaxRecvSize>41088</MaxRecvSize>
+    <DisableNagle>False</DisableNagle>
+  </SimConnect.Comm>
+</SimBase.Document>
