@@ -116,7 +116,7 @@ Things to know:
 
 The relay is one worldwide room, so the page lists pilots, not separate sessions. Positions are rounded to about a kilometre and altitudes to the nearest 100 feet. The list only exists when `public_api=true`, and the Kubernetes deployment turns it on. Map tiles come from OpenStreetMap and Leaflet from unpkg, so visitors' browsers contact both.
 
-Recent flights are the last 200 sessions where a pilot flew for at least 20 seconds. Replicas share them and a new pod copies them from its peers, so they survive a rolling update. They live in memory, so restarting every pod at once clears them.
+Recent flights are the last 200 sessions where a pilot flew for at least 20 seconds. Click a flight to draw its path on the map, with markers where weapons were launched, guns and countermeasures were used, hits were scored and hits were taken. The path keeps a point about every 5 seconds, thinned on very long flights. Replicas share them and a new pod copies them from its peers, so they survive a rolling update. They live in memory, so restarting every pod at once clears them.
 
 The same host also serves the relay over TLS at `wss://rk.hangaraddons.com/ws` through the ingress. Use it for networks that block port 8787.
 
@@ -175,7 +175,7 @@ On top of the original behavior:
 - `/` takes the Companion WebSocket upgrade. As with the Node server, other unreserved paths also work, which is how `/ws` behind the ingress reaches it.
 - `/health` returns status, protocol, player count and peer count with no player details.
 - `/ready` is the same but answers 503 while draining, and for the first few seconds of a new replica so it can link up first.
-- `/api/public` is the list behind the server browser, only when `public_api=true`.
+- `/api/public` is the list behind the server browser, only when `public_api=true`. `/api/public/flight/<id>` returns the path, weapon launches and hits of one recent flight.
 - `/dashboard` and `/api/stats` only answer on a loopback connection. Use an SSH tunnel, a VPN or `kubectl port-forward`.
 - Port 8788 is the replica link. It only starts when `peer_dns` and `peer_token` are set. Don't expose it publicly.
 
@@ -205,3 +205,35 @@ The tests start the relay in process and talk to it over real sockets: handshake
 The RK Tactical Panel, created by `=rk=`, is in `panel/`. It's the part that runs inside MSFS, and it talks to the Companion through SimConnect data areas whose names carry a version. `tools/Check-PanelCompatibility.ps1` confirms the panel and the Companion source agree, and that the Companion bundled inside the panel is the current one. `tools/Update-PanelLayout.ps1` keeps the panel's `layout.json` right after edits, and `tools/Update-BundledCompanion.ps1` refreshes the bundled Companion. See `panel/README.md`.
 
 `tools/Build-AddonPackage.ps1` builds everything that goes on the addon page: the panel zip, the Companion zip and its checksum. The relay server isn't part of that download. It runs in the Hangar Addons cluster.
+
+## Troubleshooting with the logs
+
+The relay logs what it does, and the Companion writes `companion.log` beside the exe. Between them you can follow a pilot from the sim to the screen. On the cluster:
+
+```powershell
+kubectl -n rk-relay logs -l app=rk-relay --tail=200 --prefix
+```
+
+| Relay log line | What it tells you |
+|---|---|
+| `CONNECT name=... proto=3 client="RKTacticalCompanion/1.5.4"` | A pilot joined, and which Companion version they run. An empty `client` is an older Companion. |
+| `STATE_FIRST name=... team=0 flight=5 ...` | The first position arrived. Team and flight show how the panel sees them. |
+| `TEAM name=... team=0->1` | A pilot changed team. |
+| `VIEW viewer="Name" team=0 contacts=3 tracked=3 [A(t0,tracked) ...]` | The exact list of pilots this person is being sent, and whether each is tracked. If a pilot you expect isn't here, the relay isn't sending them. If they are, the problem is in that pilot's Companion or panel. |
+| `STATE_DROP name=... reason=out_of_range ...` | A position was thrown away because a value was impossible. |
+| `NO_STATE`, `STATE_STALE` | A pilot is connected but never sent a position, or stopped sending one. |
+| `COMBAT_DROP name=... reason=team_rules ...` | A weapon event was dropped, with the teams involved. |
+| `ROOM users=5 flying=4 peers=1 ...` | A summary every 30 seconds. |
+
+| Companion log line | What it tells you |
+|---|---|
+| `Connecting to host:port (encrypted or not)` and `Relay connect failed at ...` | Whether it reached the relay, and if not, the Windows error (DNS, blocked port, TLS). |
+| `Multiplayer relay connected. Joining as "Name" (id ...)` and `You are flying as "Name"` | The Companion joined and what name it got. |
+| `Snapshot N from the relay: 3 contact(s) [A(t0,tracked) ...]` | What the relay sent this Companion. It should match the relay's `VIEW` line. |
+| `Multiplayer SimConnect tracks published: 3` | The contacts were handed to the panel inside MSFS. If this is missing or fails, the panel has nothing to draw. |
+| `Position sent: ... lat ... team ... flight ...` | The position leaving the Companion every 10 seconds. `Not sending a position` means MSFS hasn't given it your aircraft data. |
+| `The panel's telemetry does not match this Companion` | The panel and Companion are different versions. |
+| `Combat sent` and `Combat received` | Weapons leaving and arriving. |
+| `Relay disconnected after Ns: reason` | Why a connection ended, including the relay's close code. |
+
+If a pilot says they can't see anyone, ask for their `companion.log` and look at the relay's `VIEW` line for that pilot at the same time. Whichever side first has the wrong list is where the problem is.

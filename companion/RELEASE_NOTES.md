@@ -9,3 +9,5 @@ Changes in 1.5.1: combat events and your position go out on their own thread, so
 Changes in 1.5.2: the Companion can run on a different PC from MSFS (set `simconnect_host` in `companion.ini` and see the player README), and the first run asks for your pilot name. Press N to change it later.
 
 Changes in 1.5.3: if someone is already using your name you are given the same name with a number added, and the Companion tells you.
+
+Changes in 1.5.4: a `companion.log` file beside the exe records the connection, what the relay sends, your position updates and what is handed to the panel. Send it when you report a problem.

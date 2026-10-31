@@ -1,5 +1,6 @@
 #include "AudioEngine.h"
 #include "Config.h"
+#include "Log.h"
 #include "MultiplayerClient.h"
 #include "Protocol.h"
 #include "Version.h"
@@ -16,6 +17,7 @@
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <thread>
 
 namespace {
@@ -79,7 +81,29 @@ void processTelemetry(AppState& app,
     if (telemetry.magic != rk::kTelemetryMagic
         || telemetry.protocolVersion != rk::kTelemetryVersion
         || telemetry.messageSize != sizeof(rk::TacticalTelemetryV1)) {
+        static auto lastBad = std::chrono::steady_clock::time_point{};
+        const auto now = std::chrono::steady_clock::now();
+        if (now - lastBad > std::chrono::seconds(30)) {
+            lastBad = now;
+            rk::logLine(1, "The panel's telemetry does not match this Companion: magic 0x"
+                + [&] { std::ostringstream o; o << std::hex << telemetry.magic; return o.str(); }()
+                + ", version " + std::to_string(telemetry.protocolVersion) + " (expected "
+                + std::to_string(rk::kTelemetryVersion) + "), size " + std::to_string(telemetry.messageSize)
+                + " (expected " + std::to_string(sizeof(rk::TacticalTelemetryV1)) + "). Panel and Companion versions differ.");
+        }
         return;
+    }
+    {
+        static std::uint32_t lastTeam = ~0u;
+        static std::uint32_t lastFlight = ~0u;
+        int detected = 0;
+        for (int i = 0; i < 32; ++i) { if (telemetry.detectedPeers[i] != 0) { ++detected; } }
+        if (telemetry.team != lastTeam || telemetry.flight != lastFlight) {
+            lastTeam = telemetry.team;
+            lastFlight = telemetry.flight;
+            rk::logLine(1, "Panel telemetry: team " + std::to_string(telemetry.team) + ", flight "
+                + std::to_string(telemetry.flight) + ", " + std::to_string(detected) + " detected contact(s)");
+        }
     }
     app.user.team=telemetry.team;app.user.flight=telemetry.flight;
     for(int i=0;i<32;++i)app.user.detectedPeers[i]=telemetry.detectedPeers[i];
@@ -92,13 +116,13 @@ void processTelemetry(AppState& app,
         app.telemetryInitialized = true;
         app.lastLaunchSequence = telemetry.launchSequence;
         updateActiveWarning(*app.audio);
-        std::cout << "WASM warning telemetry connected.\n";
+        rk::say("The RK Tactical Panel is talking to the Companion (telemetry connected).");
         return;
     }
     if (telemetry.launchSequence != app.lastLaunchSequence) {
         app.lastLaunchSequence = telemetry.launchSequence;
         app.audio->playLaunch();
-        std::cout << "WARNING -- MISSILE LAUNCH DETECTED\n";
+        rk::say("WARNING -- MISSILE LAUNCH DETECTED");
     }
     updateActiveWarning(*app.audio);
 }
@@ -137,9 +161,9 @@ void CALLBACK dispatchProc(SIMCONNECT_RECV* data, DWORD size, void* context) {
     }
     case SIMCONNECT_RECV_ID_EXCEPTION: {
         const auto* exception = reinterpret_cast<SIMCONNECT_RECV_EXCEPTION*>(data);
-        std::cout << "SimConnect exception " << exception->dwException
-            << " send " << exception->dwSendID
-            << " index " << exception->dwIndex << "\n";
+        rk::say("SimConnect exception " + std::to_string(exception->dwException)
+            + " send " + std::to_string(exception->dwSendID)
+            + " index " + std::to_string(exception->dwIndex));
         break;
     }
     case SIMCONNECT_RECV_ID_QUIT:
@@ -362,6 +386,7 @@ int wmain() {
     }
     rk::CompanionConfig config = rk::loadConfig();
     rk::applySimConnectConfig(config);
+    rk::logInit(config.executableDirectory, config.logLevel);
 
     std::wcout << L"RK Tactical Companion " RK_COMPANION_VERSION L" SHARED WEAPONS AND VFX\n"
         << L"Stable Windows audio + multiplayer transport\n"
@@ -373,6 +398,11 @@ int wmain() {
             << L":" << config.simConnectPort << L"\n";
     }
     if (config.askForName && consoleInput()) { askForName(config, nullptr); }
+    rk::logLine(1, "Pilot name \"" + rk::utf8Text(config.displayName) + "\", pilot id " + rk::shortId(config.playerId)
+        + ", relay " + (config.relayUrl.empty() ? std::string("not set") : rk::utf8Text(config.relayUrl))
+        + ", MSFS " + (config.simConnectHost.empty() ? std::string("on this PC")
+            : rk::utf8Text(config.simConnectHost) + ":" + std::to_string(config.simConnectPort))
+        + ", folder " + config.executableDirectory.string());
 
     rk::AudioEngine audio;
     if (!audio.initialize(config.launchSoundPath, config.activeSoundPath,
@@ -402,6 +432,8 @@ int wmain() {
             "RK Tactical Companion", nullptr, 0, nullptr, 0);
         if (FAILED(openResult)) {
             if (failedOpens++ % 15 == 0) {
+                rk::logLine(1, "SimConnect_Open failed (waiting for MSFS), HRESULT 0x"
+                    + [&] { std::ostringstream o; o << std::hex << static_cast<unsigned long>(openResult); return o.str(); }());
                 if (config.simConnectHost.empty()) {
                     std::cout << "Waiting for MSFS on this PC...\n";
                 } else {
@@ -417,12 +449,12 @@ int wmain() {
         }
 
         failedOpens = 0;
-        std::cout << "SimConnect connected.\n";
+        rk::say("SimConnect connected.");
         AppState app{};
         app.audio = &audio;
         app.multiplayer = &multiplayer;
         if (!configureSimConnect(simConnect)) {
-            std::cout << "Unable to configure SimConnect; retrying.\n";
+            rk::say("Unable to configure SimConnect; retrying.");
             SimConnect_Close(simConnect);
             std::this_thread::sleep_for(std::chrono::seconds(2));
             continue;
@@ -474,14 +506,13 @@ int wmain() {
                     const int peers = static_cast<int>(snapshot.contactCount);
                     if (peers != lastPublishedPeerCount) {
                         lastPublishedPeerCount = peers;
-                        std::cout << "Multiplayer SimConnect tracks published: "
-                            << peers << "\n";
+                        rk::say("Multiplayer SimConnect tracks published: " + std::to_string(peers));
                     }
                 } else {
-                    std::cout << "Multiplayer SimConnect publish failed: 0x"
-                        << std::hex
-                        << static_cast<unsigned long>(snapshotResult)
-                        << std::dec << "\n";
+                    std::ostringstream failure;
+                    failure << "Multiplayer SimConnect publish failed: 0x" << std::hex
+                        << static_cast<unsigned long>(snapshotResult);
+                    rk::say(failure.str());
                 }
             }
             rk::MultiplayerCombatEventV1 combat{};
@@ -491,10 +522,13 @@ int wmain() {
                 const HRESULT combatResult = publishCombatInbox(
                     simConnect, combat, combatInboxSequence);
                 if (FAILED(combatResult)) {
-                    std::cout << "Multiplayer combat inbox publish failed: 0x"
-                        << std::hex
-                        << static_cast<unsigned long>(combatResult)
-                        << std::dec << "\n";
+                    std::ostringstream failure;
+                    failure << "Multiplayer combat inbox publish failed: 0x" << std::hex
+                        << static_cast<unsigned long>(combatResult);
+                    rk::say(failure.str());
+                } else if (combat.eventType != 5u) {
+                    rk::logLine(1, "Combat event " + std::to_string(combat.eventType)
+                        + " handed to the panel (sequence " + std::to_string(combatInboxSequence) + ")");
                 }
                 ++combatSafety;
             }
@@ -523,7 +557,7 @@ int wmain() {
         publishMultiplayerSnapshot(simConnect, emptySnapshot);
         SimConnect_Close(simConnect);
         if (!g_stopRequested) {
-            std::cout << "SimConnect disconnected; retrying.\n";
+            rk::say("SimConnect disconnected; retrying.");
             std::this_thread::sleep_for(std::chrono::seconds(2));
         }
     }

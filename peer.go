@@ -84,8 +84,10 @@ func (s *relayServer) addPeer(ws *webSocket, pod string) *peerLink {
 		old.ws.close()
 	}
 	go l.run(s.addBytesOut)
-	if h := s.historySnapshot(); len(h) > 0 {
-		b, _ := json.Marshal(peerEnvelope{T: "history", History: h})
+	history := s.historySnapshot()
+	for start := 0; start < len(history); start += historyChunk {
+		end := min(start+historyChunk, len(history))
+		b, _ := json.Marshal(peerEnvelope{T: "history", History: history[start:end]})
 		l.enqueue(wsText, b)
 	}
 	s.logEvent("PEER_UP pod=%s", pod)

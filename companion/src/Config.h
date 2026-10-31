@@ -12,6 +12,7 @@ struct CompanionConfig {
     std::wstring simConnectHost;
     int simConnectPort = 500;
     bool askForName = false;
+    int logLevel = 1;
     float launchVolume = 1.0f;
     float activeVolume = 0.85f;
     std::filesystem::path executableDirectory;

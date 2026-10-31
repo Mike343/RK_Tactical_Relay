@@ -96,12 +96,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)Package-Compan
   <ItemGroup>
     <ClCompile Include="src\AudioEngine.cpp" />
     <ClCompile Include="src\Config.cpp" />
+    <ClCompile Include="src\Log.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\MultiplayerClient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\AudioEngine.h" />
     <ClInclude Include="src\Config.h" />
+    <ClInclude Include="src\Log.h" />
     <ClInclude Include="src\MultiplayerClient.h" />
     <ClInclude Include="src\Protocol.h" />
     <ClInclude Include="src\Version.h" />

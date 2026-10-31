@@ -5,6 +5,7 @@ import (
 	"math"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -19,7 +20,25 @@ type publicPilot struct {
 	Online   int64   `json:"online_seconds"`
 }
 
+type publicFlightEvent struct {
+	T      int     `json:"t"`
+	Kind   string  `json:"kind"`
+	Weapon string  `json:"weapon,omitempty"`
+	Lat    float64 `json:"lat"`
+	Lon    float64 `json:"lon"`
+	AltFt  int     `json:"alt_ft"`
+	With   string  `json:"with,omitempty"`
+}
+
+type publicFlightDetail struct {
+	publicSession
+	Track  [][4]float64        `json:"track"`
+	Events []publicFlightEvent `json:"events"`
+}
+
 type publicSession struct {
+	ID          string `json:"id"`
+	HasPath     bool   `json:"has_path"`
 	Name        string `json:"name"`
 	Aircraft    string `json:"aircraft"`
 	Started     string `json:"started"`
@@ -97,4 +116,21 @@ func (s *relayServer) publicHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "public, max-age=2")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	_ = json.NewEncoder(w).Encode(s.publicInfo(time.Now()))
+}
+
+func (s *relayServer) publicFlightHandler(w http.ResponseWriter, r *http.Request) {
+	if !s.cfg.PublicAPI || (r.Method != http.MethodGet && r.Method != http.MethodHead) {
+		http.NotFound(w, r)
+		return
+	}
+	id := strings.TrimPrefix(r.URL.Path, "/api/public/flight/")
+	rec, ok := s.findSession(id)
+	if id == "" || !ok {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=30")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	_ = json.NewEncoder(w).Encode(publicFlight(rec))
 }

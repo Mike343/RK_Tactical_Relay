@@ -182,6 +182,11 @@ CompanionConfig loadConfig() {
         if (port >= 1 && port <= 65535) { config.simConnectPort = port; }
     } catch (...) {
     }
+    try {
+        const int level = std::stoi(readIni(ini, L"log_level", L"1"));
+        if (level >= 0 && level <= 2) { config.logLevel = level; }
+    } catch (...) {
+    }
     config.relayUrl = trim(readIni(ini, L"relay_url", L""));
     if (!config.relayUrl.empty() && !validRelayUrl(config.relayUrl)) {
         std::wcerr << L"relay_url must start with ws:// or wss://, so multiplayer is off: "

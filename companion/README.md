@@ -135,3 +135,8 @@ Things to know:
 ## Changes in 1.5.3
 
 - If another pilot is already using your name, the relay gives you the same name with a number added, like `Maverick 2`, and the Companion tells you what you ended up with. The check ignores capitals and covers every replica. A pilot who reconnects keeps their name, and a name is free again once that pilot leaves.
+
+## Changes in 1.5.4
+
+- **companion.log.** The Companion now writes a log beside the exe (or in `%LOCALAPPDATA%\RKTacticalCompanion` if that folder isn't writable). It records the connection and why it ended, the name it was given, what the relay sends, the position being sent, the contacts handed to the panel, combat sent and received, and any mismatch between the panel and the Companion. It rotates at 2 MB. `log_level` in `companion.ini` is 1 by default, 0 turns it off and 2 adds detail. Send this file when you report a problem.
+- The hello message now carries the Companion version, so the relay's own log shows what each pilot runs.

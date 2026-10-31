@@ -67,7 +67,7 @@ func (s *relayServer) combatContext(target, team uint32, wantAllies bool, now ti
 	for _, c := range s.clients {
 		fresh := c.State != nil && now.Sub(c.LastState) <= stateExpiry
 		if c.Source == target {
-			v := contact{id: c.ID, team: c.Team, panel: c.Source}
+			v := contact{id: c.ID, name: c.Name, team: c.Team, panel: c.Source}
 			if fresh {
 				v.state = *c.State
 				hasState = true

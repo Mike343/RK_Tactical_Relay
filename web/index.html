@@ -70,6 +70,20 @@ footer{margin-top:22px;color:var(--mute);font-size:12px;text-align:center;line-h
 .log td.who{font-weight:700}
 .log td.dim{color:var(--mute)}
 .scroll{overflow-x:auto}
+.mapwrap{min-width:0}
+#flightbar{display:none;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:8px;padding:10px 14px;border-radius:12px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);font-size:13px}
+.fb-text{flex:1;min-width:200px}
+.fb-title{font-weight:700;font-size:14px}
+.fb-stats{color:var(--mute);margin-top:2px}
+#flightbar label{display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--mute)}
+#flightbar button{padding:6px 12px}
+.log tr.clickable{cursor:pointer}
+.log tr.clickable:hover td{background:#10243a}
+.log tr.active td{background:#12304a}
+.log tr.clickable:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
+.evt{background:none;border:0}
+.evt-icon{width:26px;height:26px;border-radius:50%;background:#0a121bd9;border:1px solid var(--line);display:grid;place-items:center;font-size:14px;color:var(--amber)}
+.evt-dot{width:14px;height:14px;border-radius:50%;border:2px solid #06131f;margin:6px}
 </style>
 </head>
 <body>
@@ -99,7 +113,16 @@ footer{margin-top:22px;color:var(--mute);font-size:12px;text-align:center;line-h
 </section>
 
 <section class="layout">
- <div id="map"></div>
+ <div class="mapwrap">
+  <div id="flightbar">
+   <div class="fb-text"><div class="fb-title"></div><div class="fb-stats"></div></div>
+   <label><input type="checkbox" id="fb-path" checked> Path</label>
+   <label><input type="checkbox" id="fb-weapons" checked> Weapons</label>
+   <label><input type="checkbox" id="fb-hits" checked> Hits</label>
+   <button class="ghost" id="fb-close">Close</button>
+  </div>
+  <div id="map"></div>
+ </div>
  <div class="card list">
   <div class="k" style="margin-bottom:8px">Pilots</div>
   <input id="filter" type="search" placeholder="Search pilot or aircraft" autocomplete="off">
@@ -109,6 +132,7 @@ footer{margin-top:22px;color:var(--mute);font-size:12px;text-align:center;line-h
 
 <section class="card log">
  <div class="k" style="margin-bottom:6px">Recent flights</div>
+ <div class="sub" style="margin-bottom:8px">Click a flight to see its path, the weapons it used and where it scored or took hits.</div>
  <div class="scroll"><table>
   <thead><tr><th>Pilot</th><th>Aircraft</th><th>Landed</th><th>Time flown</th><th>Peak altitude</th><th>Top speed</th></tr></thead>
   <tbody id="flights"></tbody>
@@ -190,7 +214,7 @@ function renderMap(list){
  if(!fitted&&list.length){
   fitted=true;
   var pts=list.map(function(p){return [p.lat,p.lon]});
-  if(pts.length===1)map.setView(pts[0],6);else map.fitBounds(pts,{padding:[50,50],maxZoom:7});
+  if(pts.length===1)map.setView(pts[0],6,{animate:false});else map.fitBounds(pts,{padding:[50,50],maxZoom:7,animate:false});
  }
 }
 
@@ -238,12 +262,97 @@ function ago(iso,seconds){
  return Math.floor(s/86400)+'d ago';
 }
 
+var flightPath=L.layerGroup().addTo(map);
+var flightWeapons=L.layerGroup().addTo(map);
+var flightHits=L.layerGroup().addTo(map);
+var activeFlight='';
+
+function clockTime(s){
+ var m=Math.floor(s/60);var r=s%60;
+ return m+':'+(r<10?'0':'')+r;
+}
+
+var eventLook={
+ launch:{icon:'🚀',layer:flightWeapons,label:'Weapon launched'},
+ guns:{icon:'•',layer:flightWeapons,label:'Guns fired'},
+ countermeasure:{icon:'✦',layer:flightWeapons,label:'Countermeasures'},
+ hit:{icon:'💥',layer:flightHits,label:'Hit scored'},
+ hitTaken:{icon:'🔥',layer:flightHits,label:'Hit taken'}
+};
+
+function clearFlight(){
+ flightPath.clearLayers();flightWeapons.clearLayers();flightHits.clearLayers();
+ activeFlight='';
+ $('flightbar').style.display='none';
+ renderFlights(lastRecent);
+}
+
+function addPoint(layer,lat,lon,html,title,text){
+ var m=L.marker([lat,lon],{icon:L.divIcon({className:'evt',html:html,iconSize:[26,26],iconAnchor:[13,13]}),title:title});
+ var d=document.createElement('div');
+ var b=document.createElement('b');b.textContent=title;d.appendChild(b);
+ d.appendChild(document.createElement('br'));d.appendChild(document.createTextNode(text));
+ m.bindPopup(d);m.addTo(layer);
+ return m;
+}
+
+function showFlight(f){
+ activeFlight=f.id;
+ renderFlights(lastRecent);
+ fetch('/api/public/flight/'+encodeURIComponent(f.id),{cache:'no-store'}).then(function(r){
+  if(!r.ok)throw new Error('status '+r.status);
+  return r.json();
+ }).then(function(d){
+  if(activeFlight!==f.id)return;
+  flightPath.clearLayers();flightWeapons.clearLayers();flightHits.clearLayers();
+  var color=colorFor(d.name);
+  var pts=(d.track||[]).map(function(p){return [p[1],p[2]]});
+  if(pts.length>1){
+   L.polyline(pts,{color:'#06131f',weight:7,opacity:.7}).addTo(flightPath);
+   L.polyline(pts,{color:color,weight:4,opacity:.95}).addTo(flightPath);
+   addPoint(flightPath,pts[0][0],pts[0][1],'<div class="evt-dot" style="background:#37df71"></div>','Takeoff or first position',d.name+' · '+(d.aircraft||''));
+   addPoint(flightPath,pts[pts.length-1][0],pts[pts.length-1][1],'<div class="evt-dot" style="background:#ff5d8f"></div>','Last position',d.name+' · '+fmtTime(d.seconds)+' flown');
+  }
+  var counts={launch:0,guns:0,countermeasure:0,hit:0,hitTaken:0};
+  (d.events||[]).forEach(function(e){
+   var look=eventLook[e.kind];if(!look)return;
+   counts[e.kind]=(counts[e.kind]||0)+1;
+   var text='T+'+clockTime(e.t)+' · '+num(e.alt_ft)+' ft';
+   if(e.weapon&&e.kind!=='hit'&&e.kind!=='hitTaken')text=e.weapon+' · '+text;
+   if(e.kind==='hit')text='Hit '+(e.with||'a target')+' · '+text;
+   if(e.kind==='hitTaken')text='Hit by '+(e.with||'someone')+(e.weapon?' with '+e.weapon:'')+' · '+text;
+   addPoint(look.layer,e.lat,e.lon,'<div class="evt-icon">'+look.icon+'</div>',look.label,text);
+  });
+  var bar=$('flightbar');bar.style.display='flex';
+  bar.querySelector('.fb-title').textContent=d.name+' · '+(d.aircraft||'Unknown aircraft')+' · '+fmtTime(d.seconds);
+  bar.querySelector('.fb-stats').textContent=counts.launch+' missiles · '+counts.hit+' hits scored · '+counts.hitTaken+' hits taken'+(d.track&&d.track.length>1?'':' · no path recorded');
+  $('fb-path').checked=true;$('fb-weapons').checked=true;$('fb-hits').checked=true;
+  if(pts.length>1){map.stop();map.fitBounds(pts,{padding:[50,50],maxZoom:9,animate:false});}
+  $('map').scrollIntoView({behavior:'smooth',block:'nearest'});
+ }).catch(function(){
+  if(activeFlight===f.id){$('flightbar').style.display='flex';$('flightbar').querySelector('.fb-title').textContent='That flight is no longer available.';$('flightbar').querySelector('.fb-stats').textContent='';}
+ });
+}
+
+function toggleLayer(box,layer){
+ box.addEventListener('change',function(){if(box.checked)map.addLayer(layer);else map.removeLayer(layer);});
+}
+
+var lastRecent=[];
 function renderFlights(list){
+ lastRecent=list;
  var body=$('flights');
  body.replaceChildren();
  $('noflights').style.display=list.length?'none':'block';
  list.forEach(function(f){
   var tr=document.createElement('tr');
+  if(f.has_path){
+   tr.className='clickable'+(f.id===activeFlight?' active':'');
+   tr.tabIndex=0;
+   tr.title='Show this flight on the map';
+   tr.addEventListener('click',function(){showFlight(f)});
+   tr.addEventListener('keydown',function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();showFlight(f)}});
+  }
   var cells=[[f.name,'who'],[f.aircraft||'Unknown aircraft',''],[ago(f.started,f.seconds),'dim'],[fmtTime(f.seconds),''],[num(f.max_alt_ft)+' ft',''],[f.max_speed_kts+' kts','']];
   cells.forEach(function(c){
    var td=document.createElement('td');td.textContent=c[0];if(c[1])td.className=c[1];tr.appendChild(td);
@@ -251,6 +360,9 @@ function renderFlights(list){
   body.appendChild(tr);
  });
 }
+document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&activeFlight)clearFlight()});
+toggleLayer($('fb-path'),flightPath);toggleLayer($('fb-weapons'),flightWeapons);toggleLayer($('fb-hits'),flightHits);
+$('fb-close').addEventListener('click',clearFlight);
 
 function setLive(state,text){
  var l=$('live');l.className='live '+state;$('livetext').textContent=text;

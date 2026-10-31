@@ -42,3 +42,7 @@ The warning sounds play on the PC running the Companion, so use its speakers or 
 Names
 
 Every pilot name on the server is unique. If someone is already using yours, the server adds a number, like Maverick 2, and the window tells you the name you got.
+
+If something isn't working
+
+The Companion writes a file called companion.log in its folder. When you report a problem, attach that file. It shows whether the Companion reached the server, which other pilots the server sent you, and what it handed to the panel.

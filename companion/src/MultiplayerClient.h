@@ -40,6 +40,8 @@ private:
     std::string makeState(const UserAircraftState& state) const;
     std::string makeCombatEvent(const MultiplayerCombatEventV1& event) const;
     void processMessage(const std::string& text);
+    void noteReason(const std::string& reason);
+    std::string takeReason();
 
     CompanionConfig config_;
     mutable std::mutex stateMutex_;
@@ -53,6 +55,12 @@ private:
     std::atomic<bool> receiverRunning_{false};
     std::atomic<bool> reconnectRequested_{false};
     mutable std::mutex nameMutex_;
+    std::mutex reasonMutex_;
+    std::string endReason_;
+    std::atomic<unsigned long long> statesSent_{0};
+    std::atomic<unsigned long long> combatOut_{0};
+    std::atomic<unsigned long long> combatIn_{0};
+    std::atomic<unsigned long long> snapshotsIn_{0};
     std::mutex snapshotMutex_;
     MultiplayerSnapshotV1 latestSnapshot_{};
     std::uint32_t consumedSnapshotSequence_ = 0;

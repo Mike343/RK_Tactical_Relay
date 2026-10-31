@@ -1,4 +1,5 @@
 #include "MultiplayerClient.h"
+#include "Log.h"
 #include "Version.h"
 
 #define NOMINMAX
@@ -240,8 +241,14 @@ void MultiplayerClient::run() {
         }
 
         connected_ = true;
-        std::cout << "Multiplayer relay connected.\n";
+        std::string helloName;
+        {
+            std::lock_guard<std::mutex> lock(nameMutex_);
+            helloName = utf8Text(config_.displayName);
+        }
+        say("Multiplayer relay connected. Joining as \"" + helloName + "\" (id " + shortId(config_.playerId) + ").");
         if (!sendText(makeHello())) {
+            logLine(1, "Could not send the hello message to the relay.");
             connected_ = false;
             closeWebSocket();
             continue;
@@ -249,6 +256,11 @@ void MultiplayerClient::run() {
 
         const long long startedAt = nowMs();
         lastReceiveMs_ = startedAt;
+        statesSent_ = 0;
+        combatOut_ = 0;
+        combatIn_ = 0;
+        snapshotsIn_ = 0;
+        takeReason();
         void* const socket = socket_;
         receiverRunning_ = true;
         std::thread receiver(&MultiplayerClient::receiveLoop, this, socket);
@@ -258,7 +270,14 @@ void MultiplayerClient::run() {
         closeWebSocket();
         if (lastReceiveMs_.load() > startedAt) { backoff = 1000ms; }
         if (!stopRequested_) {
-            std::cout << "Multiplayer relay disconnected; retrying.\n";
+            const long long seconds = (nowMs() - startedAt) / 1000;
+            std::string reason = takeReason();
+            if (reason.empty()) { reason = "the connection ended"; }
+            say("Multiplayer relay disconnected after " + std::to_string(seconds) + "s: " + reason + ". Retrying.");
+            logLine(1, "Session totals: snapshots received " + std::to_string(snapshotsIn_.load())
+                + ", position updates sent " + std::to_string(statesSent_.load())
+                + ", combat sent " + std::to_string(combatOut_.load())
+                + ", combat received " + std::to_string(combatIn_.load()));
             sleepWhile(stopRequested_, backoff);
         }
     }
@@ -267,6 +286,7 @@ void MultiplayerClient::run() {
 void MultiplayerClient::sendLoop() {
     using namespace std::chrono_literals;
     auto nextState = std::chrono::steady_clock::now();
+    auto nextStateLog = nextState + std::chrono::seconds(2);
     while (!stopRequested_ && connected_) {
         for (int sent = 0; sent < 64; ++sent) {
             MultiplayerCombatEventV1 combat{};
@@ -276,8 +296,15 @@ void MultiplayerClient::sendLoop() {
                 combat = outgoingCombat_.front();
             }
             if (!sendText(makeCombatEvent(combat))) {
+                noteReason("sending a combat event failed");
                 connected_ = false;
                 break;
+            }
+            ++combatOut_;
+            if (combat.eventType != 5u) {
+                logLine(1, "Combat sent: event " + std::to_string(combat.eventType) + " weapon "
+                    + std::to_string(combat.weaponType) + " target " + std::to_string(combat.targetContactId)
+                    + " weaponId " + std::to_string(combat.weaponId));
             }
             {
                 std::lock_guard<std::mutex> lock(outgoingCombatMutex_);
@@ -290,12 +317,12 @@ void MultiplayerClient::sendLoop() {
         if (!connected_) { break; }
 
         if (reconnectRequested_.exchange(false)) {
-            std::cout << "Pilot name changed; reconnecting.\n";
+            noteReason("the pilot name was changed");
             break;
         }
 
         if (nowMs() - lastReceiveMs_.load() > kLivenessMs) {
-            std::cout << "Relay stopped answering.\n";
+            noteReason("the relay stopped answering for 15 seconds");
             break;
         }
 
@@ -309,7 +336,24 @@ void MultiplayerClient::sendLoop() {
                 state = localState_;
                 valid = localStateValid_;
             }
-            if (valid && !sendText(makeState(state))) { break; }
+            if (valid) {
+                if (!sendText(makeState(state))) {
+                    noteReason("sending a position update failed");
+                    break;
+                }
+                ++statesSent_;
+                if (now >= nextStateLog) {
+                    nextStateLog = now + std::chrono::seconds(10);
+                    logLine(1, "Position sent: " + std::to_string(statesSent_.load()) + " updates so far, now lat "
+                        + std::to_string(state.latitude) + " lon " + std::to_string(state.longitude)
+                        + " alt " + std::to_string(static_cast<int>(state.altitudeFt)) + " ft, team "
+                        + std::to_string(state.team) + " flight " + std::to_string(state.flight)
+                        + ", aircraft \"" + std::string(state.aircraftTitle) + "\"");
+                }
+            } else if (now >= nextStateLog) {
+                nextStateLog = now + std::chrono::seconds(10);
+                logLine(1, "Not sending a position: MSFS has not given the Companion your aircraft data yet.");
+            }
         }
         std::this_thread::sleep_for(5ms);
     }
@@ -320,6 +364,9 @@ void MultiplayerClient::receiveLoop(void* socket) {
     std::vector<char> buffer(65536);
     std::string pending;
     bool discard = false;
+    std::uint64_t lastSignature = 0;
+    long long lastViewLog = 0;
+    long long lastBadLog = 0;
     while (!stopRequested_ && connected_) {
         DWORD received = 0;
         WINHTTP_WEB_SOCKET_BUFFER_TYPE type =
@@ -327,16 +374,43 @@ void MultiplayerClient::receiveLoop(void* socket) {
         const DWORD result = WinHttpWebSocketReceive(
             static_cast<HINTERNET>(socket), buffer.data(),
             static_cast<DWORD>(buffer.size()), &received, &type);
-        if (result != NO_ERROR
-            || type == WINHTTP_WEB_SOCKET_CLOSE_BUFFER_TYPE) {
+        if (result != NO_ERROR) {
+            noteReason("receiving failed: " + describeWinHttpError(result));
+            break;
+        }
+        if (type == WINHTTP_WEB_SOCKET_CLOSE_BUFFER_TYPE) {
+            USHORT status = 0;
+            char text[124]{};
+            DWORD textLength = 0;
+            WinHttpWebSocketQueryCloseStatus(static_cast<HINTERNET>(socket), &status, text, sizeof(text) - 1, &textLength);
+            noteReason("the relay closed the connection (code " + std::to_string(status) + ", \""
+                + std::string(text, textLength) + "\")");
             break;
         }
         lastReceiveMs_ = nowMs();
         if (type == WINHTTP_WEB_SOCKET_BINARY_MESSAGE_BUFFER_TYPE) {
-            if (received != sizeof(MultiplayerSnapshotV1)) { continue; }
+            if (received != sizeof(MultiplayerSnapshotV1)) {
+                if (nowMs() - lastBadLog > 10000) {
+                    lastBadLog = nowMs();
+                    logLine(1, "Ignored a binary message of " + std::to_string(received) + " bytes (a snapshot is "
+                        + std::to_string(sizeof(MultiplayerSnapshotV1)) + ").");
+                }
+                continue;
+            }
             MultiplayerSnapshotV1 snapshot{};
             std::memcpy(&snapshot, buffer.data(), sizeof(snapshot));
-            if (!cleanSnapshot(snapshot)) { continue; }
+            const std::uint32_t sentCount = snapshot.contactCount;
+            const std::uint32_t sentVersion = snapshot.protocolVersion;
+            if (!cleanSnapshot(snapshot)) {
+                if (nowMs() - lastBadLog > 10000) {
+                    lastBadLog = nowMs();
+                    logLine(1, "Rejected a snapshot: magic 0x" + [&] { std::ostringstream o; o << std::hex << snapshot.magic; return o.str(); }()
+                        + ", version " + std::to_string(sentVersion) + " (this Companion needs " + std::to_string(kMultiplayerVersion)
+                        + "), contacts " + std::to_string(sentCount) + ". The server and Companion do not match.");
+                }
+                continue;
+            }
+            ++snapshotsIn_;
             {
                 std::lock_guard<std::mutex> lock(snapshotMutex_);
                 latestSnapshot_ = snapshot;
@@ -345,6 +419,29 @@ void MultiplayerClient::receiveLoop(void* socket) {
             const int previous = remotePlayerCount_.exchange(remote);
             if (previous != remote) {
                 std::cout << "RK multiplayer contacts: " << remote << "\n";
+            }
+            if (snapshot.contactCount < sentCount && nowMs() - lastBadLog > 10000) {
+                lastBadLog = nowMs();
+                logLine(1, "Dropped " + std::to_string(sentCount - snapshot.contactCount)
+                    + " contact(s) from a snapshot because their position was impossible.");
+            }
+            std::uint64_t signature = 1469598103934665603ull;
+            for (std::uint32_t i = 0; i < snapshot.contactCount; ++i) {
+                signature = (signature ^ snapshot.contacts[i].idHash) * 1099511628211ull;
+                signature = (signature ^ snapshot.contacts[i].flags) * 1099511628211ull;
+            }
+            signature ^= snapshot.contactCount;
+            if ((signature != lastSignature || snapshotsIn_ == 1) && nowMs() - lastViewLog > 1000) {
+                lastSignature = signature;
+                lastViewLog = nowMs();
+                std::string list;
+                for (std::uint32_t i = 0; i < snapshot.contactCount && i < 12; ++i) {
+                    const auto& c = snapshot.contacts[i];
+                    list += std::string(i ? " " : "") + c.displayName + "(t" + std::to_string(c.flags & 3u)
+                        + ((c.flags & 4u) ? ",tracked" : ",hidden") + ")";
+                }
+                logLine(1, "Snapshot " + std::to_string(snapshot.sequence) + " from the relay: "
+                    + std::to_string(snapshot.contactCount) + " contact(s) [" + list + "]");
             }
         } else if (type == WINHTTP_WEB_SOCKET_UTF8_FRAGMENT_BUFFER_TYPE
             || type == WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE) {
@@ -380,13 +477,17 @@ void MultiplayerClient::abortSocket(std::thread& receiver) {
 bool MultiplayerClient::connectWebSocket() {
     closeWebSocket();
     const std::wstring url = httpEquivalent(config_.relayUrl);
+    const auto fail = [](const char* step) {
+        logLine(1, std::string("Relay connect failed at ") + step + ": "
+            + describeWinHttpError(GetLastError()));
+    };
     URL_COMPONENTS parts{};
     parts.dwStructSize = sizeof(parts);
     parts.dwSchemeLength = static_cast<DWORD>(-1);
     parts.dwHostNameLength = static_cast<DWORD>(-1);
     parts.dwUrlPathLength = static_cast<DWORD>(-1);
     parts.dwExtraInfoLength = static_cast<DWORD>(-1);
-    if (!WinHttpCrackUrl(url.c_str(), 0, 0, &parts)) { return false; }
+    if (!WinHttpCrackUrl(url.c_str(), 0, 0, &parts)) { fail("reading the relay_url"); return false; }
 
     std::wstring host(parts.lpszHostName, parts.dwHostNameLength);
     std::wstring path(parts.lpszUrlPath, parts.dwUrlPathLength);
@@ -394,15 +495,18 @@ bool MultiplayerClient::connectWebSocket() {
         path.append(parts.lpszExtraInfo, parts.dwExtraInfoLength);
     }
     if (path.empty()) { path = L"/"; }
+    logLine(1, "Connecting to " + utf8Text(host) + ":" + std::to_string(parts.nPort)
+        + utf8Text(path) + (parts.nScheme == INTERNET_SCHEME_HTTPS ? " (encrypted)" : " (not encrypted)"));
 
     HINTERNET session = WinHttpOpen(L"RKTacticalCompanion/" RK_COMPANION_VERSION,
         WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME,
         WINHTTP_NO_PROXY_BYPASS, 0);
-    if (!session) { return false; }
+    if (!session) { fail("opening WinHTTP"); return false; }
     WinHttpSetTimeouts(session, 3000, 3000, 3000, 2000);
     HINTERNET connection = WinHttpConnect(session, host.c_str(),
         parts.nPort, 0);
     if (!connection) {
+        fail("connecting");
         WinHttpCloseHandle(session);
         return false;
     }
@@ -412,23 +516,38 @@ bool MultiplayerClient::connectWebSocket() {
     HINTERNET request = WinHttpOpenRequest(connection, L"GET", path.c_str(),
         nullptr, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, flags);
     if (!request) {
+        fail("creating the request");
         WinHttpCloseHandle(connection);
         WinHttpCloseHandle(session);
         return false;
     }
-    if (!WinHttpSetOption(request, WINHTTP_OPTION_UPGRADE_TO_WEB_SOCKET,
-        nullptr, 0)
-        || !WinHttpSendRequest(request, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-            WINHTTP_NO_REQUEST_DATA, 0, 0, 0)
-        || !WinHttpReceiveResponse(request, nullptr)) {
+    const char* step = "switching to WebSocket";
+    bool ok = WinHttpSetOption(request, WINHTTP_OPTION_UPGRADE_TO_WEB_SOCKET, nullptr, 0) != FALSE;
+    if (ok) {
+        step = "sending the request";
+        ok = WinHttpSendRequest(request, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+            WINHTTP_NO_REQUEST_DATA, 0, 0, 0) != FALSE;
+    }
+    if (ok) {
+        step = "waiting for the server's answer";
+        ok = WinHttpReceiveResponse(request, nullptr) != FALSE;
+    }
+    if (!ok) {
+        fail(step);
         WinHttpCloseHandle(request);
         WinHttpCloseHandle(connection);
         WinHttpCloseHandle(session);
         return false;
     }
+    DWORD statusCode = 0;
+    DWORD statusSize = sizeof(statusCode);
+    WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+        WINHTTP_HEADER_NAME_BY_INDEX, &statusCode, &statusSize, WINHTTP_NO_HEADER_INDEX);
     HINTERNET socket = WinHttpWebSocketCompleteUpgrade(request, 0);
     WinHttpCloseHandle(request);
     if (!socket) {
+        logLine(1, "The server answered HTTP " + std::to_string(statusCode)
+            + " instead of switching to WebSocket (" + describeWinHttpError(GetLastError()) + ")");
         WinHttpCloseHandle(connection);
         WinHttpCloseHandle(session);
         return false;
@@ -488,7 +607,8 @@ std::string MultiplayerClient::makeHello() const {
     std::ostringstream out;
     out << "{\"type\":\"hello\",\"protocol\":3"
         << ",\"id\":\"" << jsonEscape(utf8(config_.playerId)) << "\""
-        << ",\"name\":\"" << jsonEscape(utf8(config_.displayName)) << "\"}";
+        << ",\"name\":\"" << jsonEscape(utf8(config_.displayName)) << "\""
+        << ",\"client\":\"RKTacticalCompanion/" << utf8(RK_COMPANION_VERSION) << "\"}";
     return out.str();
 }
 
@@ -539,12 +659,18 @@ void MultiplayerClient::processMessage(const std::string& text) {
                 requested = utf8(config_.displayName);
             }
             if (assigned == requested) {
-                std::cout << "You are flying as \"" << assigned << "\".\n";
+                say("You are flying as \"" + assigned + "\".");
             } else {
-                std::cout << "Someone is already using \"" << requested
-                    << "\", so you are flying as \"" << assigned << "\".\n";
+                say("Someone is already using \"" + requested + "\", so you are flying as \"" + assigned + "\".");
             }
+        } else {
+            logLine(1, "Relay welcome received.");
         }
+        return;
+    }
+    if (text.find("\"type\":\"error\"") != std::string::npos) {
+        say("The relay sent an error: " + text.substr(0, 200));
+        noteReason("the relay reported an error");
         return;
     }
     if (text.find("\"type\":\"combat\"") != std::string::npos) {
@@ -595,11 +721,27 @@ void MultiplayerClient::processMessage(const std::string& text) {
         std::lock_guard<std::mutex> lock(incomingCombatMutex_);
         if (incomingCombat_.size() >= 256) { incomingCombat_.pop_front(); }
         incomingCombat_.push_back(event);
+        ++combatIn_;
+        if (event.eventType != 5u) {
+            logLine(1, "Combat received: event " + std::to_string(event.eventType) + " weapon "
+                + std::to_string(event.weaponType) + " from " + std::to_string(event.sourceContactId)
+                + " target " + std::to_string(event.targetContactId)
+                + ((event.flags & kCombatFlagLocalTarget) ? " (this pilot is the target)" : ""));
+        }
         return;
     }
-    if (text.find("\"type\":\"error\"") != std::string::npos) {
-        std::cout << "Relay returned an error message.\n";
-    }
+}
+
+void MultiplayerClient::noteReason(const std::string& reason) {
+    std::lock_guard<std::mutex> lock(reasonMutex_);
+    if (endReason_.empty()) { endReason_ = reason; }
+}
+
+std::string MultiplayerClient::takeReason() {
+    std::lock_guard<std::mutex> lock(reasonMutex_);
+    std::string reason;
+    reason.swap(endReason_);
+    return reason;
 }
 
 } // namespace rk

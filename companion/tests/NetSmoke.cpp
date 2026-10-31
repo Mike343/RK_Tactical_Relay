@@ -1,5 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "MultiplayerClient.h"
+#include "Log.h"
 #include <chrono>
 #include <cstring>
 #include <string>
@@ -19,6 +20,7 @@ int main(int argc, char** argv) {
     std::wstring url = argc > 1 ? std::wstring(argv[1], argv[1] + strlen(argv[1])) : L"ws://127.0.0.1:18787";
     rk::CompanionConfig ca; ca.relayUrl = url; ca.playerId = L"smoke-a"; ca.displayName = L"Pilot";
     rk::CompanionConfig cb; cb.relayUrl = url; cb.playerId = L"smoke-b"; cb.displayName = L"Pilot";
+    rk::logInit(std::filesystem::temp_directory_path() / "rk-netsmoke", 1);
     rk::MultiplayerClient a(ca), b(cb);
     a.start(); b.start();
     a.updateLocalState(at(10.0), true);

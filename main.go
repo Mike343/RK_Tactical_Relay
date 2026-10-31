@@ -74,6 +74,11 @@ type relayClient struct {
 	staleLogged            atomic.Bool
 	noStateLogged          atomic.Bool
 	stateLogged            bool
+	Track                  []trackPoint
+	Events                 []flightEvent
+	lastTrack              time.Time
+	trackEvery             time.Duration
+	lastGun, lastFlare     time.Time
 }
 
 type totals struct {
@@ -521,6 +526,7 @@ func (s *relayServer) acceptStateLocked(c *relayClient, m wireMessage, now time.
 	c.MaxAltFt = math.Max(c.MaxAltFt, m.AltFt.v)
 	c.MaxSpeedKts = math.Max(c.MaxSpeedKts, m.SpeedKts.v)
 	c.LastState = now
+	c.sampleTrackLocked(now)
 	s.counts.State.Add(1)
 
 	var notes []string
@@ -599,6 +605,13 @@ func (s *relayServer) deliverCombat(base combatMessage, from *relayClient) int {
 			continue
 		}
 		localTarget := dest.Source == base.Target
+		if localTarget && base.Event == 3 {
+			attacker := s.nameForPanel(base.Source)
+			if from != nil {
+				attacker = from.Name
+			}
+			s.recordHitTaken(dest, base, attacker)
+		}
 		if base.Event == 3 && !localTarget {
 			continue
 		}
@@ -638,6 +651,7 @@ func (s *relayServer) acceptCombat(c *relayClient, m wireMessage) {
 		source = panelContactID(c.ID)
 	}
 	base := combatMessage{"combat", event, weapon, source, target, weaponID, flags, m.Lat.v, m.Lon.v, m.AltFt.v, normalizeHeading(m.Heading.v), m.Damage.v, m.Duration.v, m.MissDistance.v}
+	var victimName string
 	if event >= 7 {
 		if (event == 8 && c.Team != 1) || (event == 9 && c.Team != 2) || (event == 7 && c.Team == 0) {
 			s.rejectCombat(c, "team_event", true)
@@ -660,6 +674,9 @@ func (s *relayServer) acceptCombat(c *relayClient, m wireMessage) {
 		}
 		if target != 0 {
 			victim, hasState, allies := s.combatContext(target, attacker, event == 1 && !defense && !s.openTeams(), time.Now())
+			if victim != nil {
+				victimName = victim.name
+			}
 			switch {
 			case victim == nil && !s.openTeams():
 				s.rejectCombat(c, fmt.Sprintf("unknown_target target=%d", target), true)
@@ -677,6 +694,9 @@ func (s *relayServer) acceptCombat(c *relayClient, m wireMessage) {
 	delivered := s.deliverCombat(base, c)
 	s.forwardCombat(base)
 	s.counts.Combat.Add(1)
+	if event < 7 {
+		s.recordCombatEvent(c, base, victimName)
+	}
 	s.counts.CombatDelivered.Add(uint64(delivered))
 	s.counts.ByEvent[base.Event].Add(1)
 	if base.Event != 5 {
@@ -898,6 +918,7 @@ func (s *relayServer) routes() *http.ServeMux {
 	mux.HandleFunc("/dashboard", s.dashboardHandler)
 	mux.HandleFunc("/api/stats", s.statsHandler)
 	mux.HandleFunc("/api/public", s.publicHandler)
+	mux.HandleFunc("/api/public/flight/", s.publicFlightHandler)
 	mux.HandleFunc("/", s.wsHandler)
 	return mux
 }

@@ -1,3 +1,3 @@
 #pragma once
 
-#define RK_COMPANION_VERSION L"1.5.3"
+#define RK_COMPANION_VERSION L"1.5.4"
