@@ -56,11 +56,13 @@ peer_dns=
 peer_port=8788
 peer_token=
 public_api=false
+team_rules=open
+log_level=1
 max_conns_per_ip=64
 drain_seconds=0
 ```
 
-Environment variables win over the file: `PORT`, `OPEN_DASHBOARD`, `PUBLIC_IP_LOOKUP`, `TRUST_PROXY`, `TRUSTED_PROXIES`, `PUBLIC_API`, `PEER_DNS`, `PEER_PORT`, `PEER_TOKEN`, `MAX_CONNS_PER_IP` and `DRAIN_SECONDS`. `POD_NAME` and `POD_IP` name an instance when you run replicas.
+Environment variables win over the file: `PORT`, `OPEN_DASHBOARD`, `PUBLIC_IP_LOOKUP`, `TRUST_PROXY`, `TRUSTED_PROXIES`, `PUBLIC_API`, `TEAM_RULES`, `LOG_LEVEL`, `PEER_DNS`, `PEER_PORT`, `PEER_TOKEN`, `MAX_CONNS_PER_IP` and `DRAIN_SECONDS`. `POD_NAME` and `POD_IP` name an instance when you run replicas.
 
 For a test instance set `PORT` to something like `18787` and leave your public relay alone. Keep 8787 in production so existing Companion configs keep working.
 
@@ -165,6 +167,8 @@ On top of the original behavior:
 - Snapshots and combat only go out after the welcome has been sent.
 - Malformed fields drop the message, not the connection.
 - Team rules from Companion 1.5. A team only fights the other team, solo pilots only fight solo pilots, a launch needs the target tracked by a teammate, and countermeasures stay on the same side.
+- `team_rules=open` is the default: every pilot sees every other pilot as tracked, and teams can fight each other. Teammates still can't fire AIM-120s at each other. `team_rules=strict` gives the Companion 1.5 behavior exactly, which is byte for byte what the Node relay that shipped with it sends.
+- `log_level=1` is the default. Besides connections and combat the relay logs each pilot's first position, team changes, who each pilot can see (`VIEW`), position updates it had to drop (`STATE_DROP`), pilots who connected but never sent a position or stopped sending one (`NO_STATE`, `STATE_STALE`), combat it dropped and why (`COMBAT_DROP`), and a room summary every 30 seconds (`ROOM`).
 
 ## Endpoints
 

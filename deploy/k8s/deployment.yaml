@@ -54,6 +54,10 @@ spec:
                 secretKeyRef:
                   name: rk-relay-peer
                   key: token
+            - name: TEAM_RULES
+              value: open
+            - name: LOG_LEVEL
+              value: "1"
             - name: PUBLIC_API
               value: "true"
             - name: TRUST_PROXY

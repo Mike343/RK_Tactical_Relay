@@ -15,7 +15,7 @@ func TestSnapshotVersionAndTeamFlags(t *testing.T) {
 	foe := contact{id: "foe", hash: 5, team: 2, panel: panelContactID("foe"), state: aircraftState{Lat: 0.1, Lon: 0}}
 	far := contact{id: "far", hash: 6, team: 2, panel: panelContactID("far"), state: aircraftState{Lat: 40, Lon: 90}}
 	contacts := []contact{ally, foe, far}
-	b := buildSnapshot(1, "ally", 1, &ally.state, contacts)
+	b := buildSnapshot(1, "ally", 1, &ally.state, contacts, false)
 	if got := binary.LittleEndian.Uint32(b[4:8]); got != 4 {
 		t.Fatalf("snapshot version %d", got)
 	}
@@ -30,7 +30,7 @@ func TestSnapshotVersionAndTeamFlags(t *testing.T) {
 	if flags[6] != 2 {
 		t.Errorf("distant foe should not be tracked, flags=%d", flags[6])
 	}
-	solo := buildSnapshot(2, "x", 0, nil, contacts)
+	solo := buildSnapshot(2, "x", 0, nil, contacts, false)
 	if got := binary.LittleEndian.Uint32(solo[28:32]); got&flagTracked == 0 {
 		t.Errorf("solo viewers track everyone, flags=%d", got)
 	}
@@ -39,7 +39,7 @@ func TestSnapshotVersionAndTeamFlags(t *testing.T) {
 func TestDetectedListTracksTarget(t *testing.T) {
 	ally := contact{id: "ally", team: 1, detected: []uint32{panelContactID("far")}, state: aircraftState{Heading: 180}}
 	far := contact{id: "far", hash: 6, team: 2, panel: panelContactID("far"), state: aircraftState{Lat: 40, Lon: 90}}
-	b := buildSnapshot(1, "ally", 1, &ally.state, []contact{ally, far})
+	b := buildSnapshot(1, "ally", 1, &ally.state, []contact{ally, far}, false)
 	if got := binary.LittleEndian.Uint32(b[28:32]); got != 2|flagTracked {
 		t.Errorf("flags=%d", got)
 	}
@@ -69,7 +69,7 @@ func TestHelloAcceptsProtocolFour(t *testing.T) {
 }
 
 func TestTeamCombatRules(t *testing.T) {
-	_, addr := startRelay(t)
+	_, addr := startRelayWith(t, config{Port: 8787, OpenDashboard: true, LogLevel: 1, TeamRules: "strict"})
 	a := join(t, addr, "alpha")
 	b := join(t, addr, "bravo")
 	c := join(t, addr, "charlie")

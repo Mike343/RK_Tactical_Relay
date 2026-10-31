@@ -23,10 +23,19 @@ type config struct {
 	PodIP          string
 	MaxConnsPerIP  int
 	DrainSeconds   int
+	TeamRules      string
+	LogLevel       int
 }
 
 func defaultConfig() config {
-	return config{Port: 8787, OpenDashboard: true, PublicIPLookup: true, TrustedProxies: parseCIDRs(defaultTrustedProxies), PeerPort: 8788, MaxConnsPerIP: 64}
+	return config{Port: 8787, OpenDashboard: true, PublicIPLookup: true, TrustedProxies: parseCIDRs(defaultTrustedProxies), PeerPort: 8788, MaxConnsPerIP: 64, TeamRules: "open", LogLevel: 1}
+}
+
+func parseTeamRules(v string) string {
+	if strings.EqualFold(strings.TrimSpace(v), "strict") {
+		return "strict"
+	}
+	return "open"
 }
 
 func parseBool(v string) bool {
@@ -117,6 +126,12 @@ func readINI(path string) config {
 			if n, err := strconv.Atoi(v); err == nil && n >= 0 && n <= 120 {
 				cfg.DrainSeconds = n
 			}
+		case "team_rules":
+			cfg.TeamRules = parseTeamRules(v)
+		case "log_level":
+			if n, err := strconv.Atoi(v); err == nil && n >= 0 && n <= 2 {
+				cfg.LogLevel = n
+			}
 		}
 	}
 	return cfg
@@ -155,6 +170,12 @@ func applyEnv(cfg config) config {
 	}
 	if n, err := strconv.Atoi(os.Getenv("DRAIN_SECONDS")); err == nil && n >= 0 && n <= 120 {
 		cfg.DrainSeconds = n
+	}
+	if v := os.Getenv("TEAM_RULES"); v != "" {
+		cfg.TeamRules = parseTeamRules(v)
+	}
+	if n, err := strconv.Atoi(os.Getenv("LOG_LEVEL")); err == nil && n >= 0 && n <= 2 {
+		cfg.LogLevel = n
 	}
 	cfg.PodName = os.Getenv("POD_NAME")
 	cfg.PodIP = os.Getenv("POD_IP")

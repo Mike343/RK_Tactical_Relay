@@ -65,6 +65,15 @@ type relayClient struct {
 	ready        atomic.Bool
 	combatTokens float64
 	combatStamp  time.Time
+
+	Client                 string
+	Protocol               uint32
+	viewSig                uint64
+	viewLogged, dropLogged time.Time
+	lastDrop               time.Time
+	staleLogged            atomic.Bool
+	noStateLogged          atomic.Bool
+	stateLogged            bool
 }
 
 type totals struct {
@@ -105,6 +114,7 @@ type relayServer struct {
 	ipMu              sync.Mutex
 	ipConns           map[string]int
 	histMu            sync.Mutex
+	heartbeatTicks    int
 	history           []sessionRecord
 }
 
@@ -280,7 +290,7 @@ func (s *relayServer) nextSequence() uint32 {
 	}
 }
 
-func buildSnapshot(seq uint32, viewerID string, viewerTeam uint32, viewer *aircraftState, contacts []contact) []byte {
+func buildSnapshot(seq uint32, viewerID string, viewerTeam uint32, viewer *aircraftState, contacts []contact, openTeams bool) []byte {
 	order := nearest(viewerID, viewer, contacts)
 	allies := alliesOf(viewerTeam, contacts)
 	buf := make([]byte, snapshotSize)
@@ -294,7 +304,7 @@ func buildSnapshot(seq uint32, viewerID string, viewerTeam uint32, viewer *aircr
 		o := 24 + i*contactSize
 		binary.LittleEndian.PutUint32(buf[o:o+4], c.hash)
 		flags := c.team
-		if teamDetects(viewerTeam, c, allies) {
+		if openTeams || teamDetects(viewerTeam, c, allies) {
 			flags |= flagTracked
 		}
 		binary.LittleEndian.PutUint32(buf[o+4:o+8], flags)
@@ -325,7 +335,7 @@ func (s *relayServer) snapshotFor(viewer *relayClient) []byte {
 	contacts := s.contactsLocked(time.Now())
 	s.mu.RUnlock()
 	s.counts.Snapshot.Add(1)
-	return buildSnapshot(s.nextSequence(), viewerID, viewerTeam, viewerState, contacts)
+	return buildSnapshot(s.nextSequence(), viewerID, viewerTeam, viewerState, contacts, s.openTeams())
 }
 
 func (s *relayServer) snapshotBroadcast() {
@@ -357,7 +367,9 @@ func (s *relayServer) snapshotBroadcast() {
 			defer wg.Done()
 			for i := w; i < len(targets); i += workers {
 				t := targets[i]
-				t.c.enqueueSnapshot(buildSnapshot(s.nextSequence(), t.c.ID, t.team, t.state, contacts))
+				b := buildSnapshot(s.nextSequence(), t.c.ID, t.team, t.state, contacts, s.openTeams())
+				t.c.enqueueSnapshot(b)
+				s.noteView(t.c, t.team, b)
 			}
 		}(w)
 	}
@@ -431,10 +443,12 @@ func (s *relayServer) acceptHello(ws *webSocket, remote string, msg wireMessage)
 		old.WS.closeWith(4001, "identity reconnected")
 		s.logEvent("REPLACED name=%q id=%s address=%s reason=identity_reconnected", old.Name, old.ID, old.IP)
 	}
+	c.Client = cleanText(string(msg.Client), 80)
+	c.Protocol = uint32(msg.Protocol.v)
 	if c.Name != name {
-		s.logEvent("CONNECT name=%q renamed=%q id=%s address=%s users=%d", name, c.Name, id, remote, users)
+		s.logEvent("CONNECT name=%q renamed=%q id=%s address=%s users=%d proto=%d client=%q", name, c.Name, id, remote, users, c.Protocol, c.Client)
 	} else {
-		s.logEvent("CONNECT name=%q id=%s address=%s users=%d", name, id, remote, users)
+		s.logEvent("CONNECT name=%q id=%s address=%s users=%d proto=%d client=%q", name, id, remote, users, c.Protocol, c.Client)
 	}
 	welcome := struct {
 		Type     string `json:"type"`
@@ -470,19 +484,30 @@ func allIDCharacters(s string) bool {
 func (s *relayServer) acceptState(c *relayClient, m wireMessage) {
 	now := time.Now()
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	notes, dropped := s.acceptStateLocked(c, m, now)
+	s.mu.Unlock()
+	if dropped != "" {
+		s.logStateDrop(c, dropped)
+	}
+	for _, note := range notes {
+		s.logEvent("%s", note)
+	}
+}
+
+func (s *relayServer) acceptStateLocked(c *relayClient, m wireMessage, now time.Time) ([]string, string) {
 	if now.Sub(c.LastMessage) < 100*time.Millisecond {
-		return
+		return nil, ""
 	}
 	c.LastMessage = now
 	if !m.Lat.inRange(-90, 90) || !m.Lon.inRange(-180, 180) || !m.AltFt.inRange(-2000, 200000) || !m.Heading.inRange(-360, 720) || !m.SpeedKts.inRange(0, 10000) {
-		return
+		return nil, fmt.Sprintf("out_of_range lat=%v lon=%v altFt=%v heading=%v speedKts=%v", m.Lat.v, m.Lon.v, m.AltFt.v, m.Heading.v, m.SpeedKts.v)
 	}
 	team, teamOK := m.Team.unsigned(2)
 	flight, flightOK := m.Flight.unsigned(^uint32(0))
 	if (m.Team.ok && !teamOK) || (m.Flight.ok && !flightOK) {
-		return
+		return nil, fmt.Sprintf("bad_team_or_flight team=%v flight=%v", m.Team.v, m.Flight.v)
 	}
+	oldTeam, oldFlight := c.Team, c.Flight
 	if !c.flightSeen || c.Flight != flight {
 		c.flightSeen = true
 		c.Flight = flight
@@ -497,6 +522,20 @@ func (s *relayServer) acceptState(c *relayClient, m wireMessage) {
 	c.MaxSpeedKts = math.Max(c.MaxSpeedKts, m.SpeedKts.v)
 	c.LastState = now
 	s.counts.State.Add(1)
+
+	var notes []string
+	if s.tracing() {
+		if !c.stateLogged {
+			c.stateLogged = true
+			notes = append(notes, fmt.Sprintf("STATE_FIRST name=%q aircraft=%q team=%d flight=%d lat=%.3f lon=%.3f altFt=%.0f detected=%d", c.Name, c.State.Aircraft, c.Team, c.Flight, c.State.Lat, c.State.Lon, c.State.AltFt, len(c.Detected)))
+		} else if c.Team != oldTeam || c.Flight != oldFlight {
+			notes = append(notes, fmt.Sprintf("TEAM name=%q team=%d->%d flight=%d->%d", c.Name, oldTeam, c.Team, oldFlight, c.Flight))
+		}
+		if c.staleLogged.Swap(false) {
+			notes = append(notes, fmt.Sprintf("STATE_RESUME name=%q", c.Name))
+		}
+	}
+	return notes, ""
 }
 
 func combatName(v uint32) string {
@@ -528,6 +567,12 @@ func (s *relayServer) rejectCombat(c *relayClient, reason string, quiet bool) {
 	s.counts.CombatRejected.Add(1)
 	if !quiet {
 		s.logEvent("COMBAT_REJECT name=%q id=%s reason=%s", c.Name, c.ID, reason)
+		return
+	}
+	now := time.Now()
+	if s.tracing() && now.Sub(c.lastDrop) >= dropLogGap {
+		c.lastDrop = now
+		s.logEvent("COMBAT_DROP name=%q reason=%s", c.Name, reason)
 	}
 }
 
@@ -550,7 +595,7 @@ func (s *relayServer) deliverCombat(base combatMessage, from *relayClient) int {
 	delivered := 0
 	for _, r := range others {
 		dest := r.c
-		if base.Event == 4 && attackerSolo != (r.team == 0) {
+		if base.Event == 4 && !s.openTeams() && attackerSolo != (r.team == 0) {
 			continue
 		}
 		localTarget := dest.Source == base.Target
@@ -614,13 +659,16 @@ func (s *relayServer) acceptCombat(c *relayClient, m wireMessage) {
 			return
 		}
 		if target != 0 {
-			victim, hasState, allies := s.combatContext(target, attacker, event == 1 && !defense, time.Now())
-			if victim == nil || !teamsInteract(attacker, victim.team, weapon) {
-				s.rejectCombat(c, "team_rules", true)
+			victim, hasState, allies := s.combatContext(target, attacker, event == 1 && !defense && !s.openTeams(), time.Now())
+			switch {
+			case victim == nil && !s.openTeams():
+				s.rejectCombat(c, fmt.Sprintf("unknown_target target=%d", target), true)
 				return
-			}
-			if event == 1 && !defense && hasState && !teamDetects(c.Team, victim, allies) {
-				s.rejectCombat(c, "not_detected", true)
+			case victim != nil && !s.teamsMayFight(attacker, victim.team, weapon):
+				s.rejectCombat(c, fmt.Sprintf("team_rules attacker=%d victim=%d weapon=%d", attacker, victim.team, weapon), true)
+				return
+			case victim != nil && !s.openTeams() && event == 1 && !defense && hasState && !teamDetects(c.Team, victim, allies):
+				s.rejectCombat(c, fmt.Sprintf("not_detected attacker=%d victim=%d", attacker, victim.team), true)
 				return
 			}
 		}
@@ -733,12 +781,17 @@ func (s *relayServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *relayServer) heartbeat() {
+	now := time.Now()
 	s.mu.RLock()
 	clients := make([]*relayClient, 0, len(s.clients))
+	views := make([]heartbeatView, 0, len(s.clients))
 	for _, cl := range s.clients {
 		clients = append(clients, cl)
+		views = append(views, heartbeatView{c: cl, hasState: cl.State != nil, stateAge: now.Sub(cl.LastState), connected: now.Sub(cl.Joined)})
 	}
 	s.mu.RUnlock()
+	s.heartbeatTicks++
+	s.traceHeartbeat(views, s.heartbeatTicks)
 	for _, c := range clients {
 		if !c.Pong.Swap(false) {
 			c.WS.close()

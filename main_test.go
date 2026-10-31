@@ -220,7 +220,12 @@ type testClient struct {
 
 func startRelay(t *testing.T) (*relayServer, string) {
 	t.Helper()
-	s := newRelay(config{Port: 8787, OpenDashboard: true})
+	return startRelayWith(t, config{Port: 8787, OpenDashboard: true, LogLevel: 1})
+}
+
+func startRelayWith(t *testing.T, cfg config) (*relayServer, string) {
+	t.Helper()
+	s := newRelay(cfg)
 	ctx, cancel := context.WithCancel(context.Background())
 	go s.broadcastLoop(ctx)
 	ts := httptest.NewServer(s.routes())
@@ -582,7 +587,7 @@ func BenchmarkBroadcast1024(b *testing.B) {
 	contacts := benchContacts(1024)
 	for i := 0; i < b.N; i++ {
 		for v := range contacts {
-			buildSnapshot(uint32(i+1), contacts[v].id, 0, &contacts[v].state, contacts)
+			buildSnapshot(uint32(i+1), contacts[v].id, 0, &contacts[v].state, contacts, false)
 		}
 	}
 }

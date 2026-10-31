@@ -84,6 +84,7 @@ type wireMessage struct {
 	Duration     number `json:"duration"`
 	MissDistance number `json:"missDistance"`
 	Team         number `json:"team"`
+	Client       text   `json:"client"`
 	Flight       number `json:"flight"`
 	Detected     idList `json:"detected"`
 }

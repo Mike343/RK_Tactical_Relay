@@ -94,3 +94,10 @@ func (s *relayServer) combatContext(target, team uint32, wantAllies bool, now ti
 	}
 	return victim, hasState, allies
 }
+
+func (s *relayServer) teamsMayFight(a, b, weapon uint32) bool {
+	if s.openTeams() {
+		return !(a != 0 && a == b && weapon == 1)
+	}
+	return teamsInteract(a, b, weapon)
+}
