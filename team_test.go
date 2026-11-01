@@ -125,8 +125,8 @@ func TestSessionHistory(t *testing.T) {
 	if got := len(s.historySnapshot()); got != 2 {
 		t.Fatalf("merge should dedupe and add, got %d", got)
 	}
-	info := s.publicInfo(now)
-	if len(info.Recent) != 2 || info.Recent[0].Name != "Remote" || info.Recent[1].MaxAltFt != 4500 {
-		t.Fatalf("recent %+v", info.Recent)
+	page := s.recentFlights(1, 10)
+	if page.Total != 2 || len(page.Flights) != 2 || page.Flights[0].Name != "Remote" || page.Flights[1].MaxAltFt != 4500 {
+		t.Fatalf("recent %+v", page)
 	}
 }

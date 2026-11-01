@@ -78,6 +78,13 @@ footer{margin-top:22px;color:var(--mute);font-size:12px;text-align:center;line-h
 #flightbar label{display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--mute)}
 #flightbar button{padding:6px 12px}
 .log tr.clickable{cursor:pointer}
+.log .view{display:inline-block;padding:2px 9px;border:1px solid var(--cyan);border-radius:999px;color:var(--cyan);font-size:12px;white-space:nowrap}
+.log tr.clickable:hover .view{background:var(--cyan);color:#06121f}
+.log tr.nopath td{opacity:.55}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 4px 0}
+.pager button{padding:6px 14px;background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+.pager button:disabled{opacity:.4;cursor:default}
+.log .nomap{font-size:12px;color:var(--mute);white-space:nowrap}
 .log tr.clickable:hover td{background:#10243a}
 .log tr.active td{background:#12304a}
 .log tr.clickable:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
@@ -132,12 +139,13 @@ footer{margin-top:22px;color:var(--mute);font-size:12px;text-align:center;line-h
 
 <section class="card log">
  <div class="k" style="margin-bottom:6px">Recent flights</div>
- <div class="sub" style="margin-bottom:8px">Click a flight to see its path, the weapons it used and where it scored or took hits.</div>
+ <div class="sub" style="margin-bottom:8px">Flights marked View on map can be clicked. Click one to see its path, the weapons it used and where it scored or took hits.</div>
  <div class="scroll"><table>
-  <thead><tr><th>Pilot</th><th>Aircraft</th><th>Landed</th><th>Time flown</th><th>Peak altitude</th><th>Top speed</th></tr></thead>
+  <thead><tr><th>Pilot</th><th>Aircraft</th><th>Landed</th><th>Time flown</th><th>Peak altitude</th><th>Top speed</th><th></th></tr></thead>
   <tbody id="flights"></tbody>
  </table></div>
  <div class="empty" id="noflights" style="padding:22px 16px">Finished flights will show up here.</div>
+ <div id="pager" class="pager" style="display:none"><button id="pg-prev" class="ghost">Previous</button><span class="sub" id="pg-text"></span><button id="pg-next" class="ghost">Next</button></div>
 </section>
 
 <footer>
@@ -354,9 +362,12 @@ function renderFlights(list){
    tr.addEventListener('keydown',function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();showFlight(f)}});
   }
   var cells=[[f.name,'who'],[f.aircraft||'Unknown aircraft',''],[ago(f.started,f.seconds),'dim'],[fmtTime(f.seconds),''],[num(f.max_alt_ft)+' ft',''],[f.max_speed_kts+' kts','']];
+  var last=document.createElement('td');
+  if(f.has_path){var v=document.createElement('span');v.className='view';v.textContent='View on map';last.appendChild(v)}else{tr.className='nopath';tr.title='No path was recorded for this flight';var n=document.createElement('span');n.className='nomap';n.textContent='No path';last.appendChild(n)}
   cells.forEach(function(c){
    var td=document.createElement('td');td.textContent=c[0];if(c[1])td.className=c[1];tr.appendChild(td);
   });
+  tr.appendChild(last);
   body.appendChild(tr);
  });
 }
@@ -379,14 +390,29 @@ function tick(){
   $('s-alt').innerHTML=num(pilots.reduce(function(a,p){return Math.max(a,p.alt_ft)},0))+'<small>ft</small>';
   $('s-speed').innerHTML=num(pilots.reduce(function(a,p){return Math.max(a,p.speed_kts)},0))+'<small>kts</small>';
   $('s-up').innerHTML=fmtUp(d.uptime_seconds);
-  renderMap(pilots);renderList();renderFlights(d.recent||[]);
+  renderMap(pilots);renderList();
  }).catch(function(){
   setLive('off','Server list unavailable');
  });
 }
 $('filter').addEventListener('input',renderList);
-tick();setInterval(tick,3000);
-document.addEventListener('visibilitychange',function(){if(!document.hidden)tick()});
+var flightPage=1,flightPages=1;
+function loadFlights(){
+ fetch("/api/public/flights?page="+flightPage,{cache:"no-store"}).then(function(r){
+  if(!r.ok)throw new Error("status "+r.status);
+  return r.json();
+ }).then(function(d){
+  flightPage=d.page;flightPages=d.pages;
+  renderFlights(d.flights||[]);
+  $("pager").style.display=d.pages>1?"flex":"none";
+  $("pg-text").textContent="Page "+d.page+" of "+d.pages+" · "+d.total+" flights";
+  $("pg-prev").disabled=d.page<=1;$("pg-next").disabled=d.page>=d.pages;
+ }).catch(function(){});
+}
+$("pg-prev").addEventListener("click",function(){if(flightPage>1){flightPage--;loadFlights()}});
+$("pg-next").addEventListener("click",function(){if(flightPage<flightPages){flightPage++;loadFlights()}});
+tick();loadFlights();setInterval(tick,3000);setInterval(function(){if(!document.hidden)loadFlights()},15000);
+document.addEventListener("visibilitychange",function(){if(!document.hidden){tick();loadFlights()}});
 })();
 </script>
 </body>

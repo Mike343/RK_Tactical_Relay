@@ -5,6 +5,7 @@ import (
 	"math"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -48,14 +49,13 @@ type publicSession struct {
 }
 
 type publicInfo struct {
-	Version  string          `json:"version"`
-	Network  string          `json:"network"`
-	Protocol uint32          `json:"protocol"`
-	Online   int             `json:"online"`
-	Replicas int             `json:"replicas"`
-	Uptime   int64           `json:"uptime_seconds"`
-	Pilots   []publicPilot   `json:"pilots"`
-	Recent   []publicSession `json:"recent"`
+	Version  string        `json:"version"`
+	Network  string        `json:"network"`
+	Protocol uint32        `json:"protocol"`
+	Online   int           `json:"online"`
+	Replicas int           `json:"replicas"`
+	Uptime   int64         `json:"uptime_seconds"`
+	Pilots   []publicPilot `json:"pilots"`
 }
 
 func roundTo(v float64, places int) float64 {
@@ -99,11 +99,6 @@ func (s *relayServer) publicInfo(now time.Time) publicInfo {
 		out.Pilots = out.Pilots[:maxPlayers]
 	}
 	out.Online = len(out.Pilots)
-	hist := s.historySnapshot()
-	out.Recent = make([]publicSession, 0, 25)
-	for i := len(hist) - 1; i >= 0 && len(out.Recent) < 25; i-- {
-		out.Recent = append(out.Recent, roundedSession(hist[i]))
-	}
 	return out
 }
 
@@ -133,4 +128,47 @@ func (s *relayServer) publicFlightHandler(w http.ResponseWriter, r *http.Request
 	w.Header().Set("Cache-Control", "public, max-age=30")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	_ = json.NewEncoder(w).Encode(publicFlight(rec))
+}
+
+const (
+	flightsPageSize    = 10
+	flightsMaxPageSize = 50
+)
+
+type publicFlightPage struct {
+	Page    int             `json:"page"`
+	Pages   int             `json:"pages"`
+	Size    int             `json:"size"`
+	Total   int             `json:"total"`
+	Flights []publicSession `json:"flights"`
+}
+
+func (s *relayServer) recentFlights(page, size int) publicFlightPage {
+	s.histMu.Lock()
+	defer s.histMu.Unlock()
+	total := len(s.history)
+	pages := max(1, (total+size-1)/size)
+	page = min(max(page, 1), pages)
+	out := publicFlightPage{Page: page, Pages: pages, Size: size, Total: total, Flights: make([]publicSession, 0, size)}
+	for i := total - 1 - (page-1)*size; i >= 0 && len(out.Flights) < size; i-- {
+		out.Flights = append(out.Flights, roundedSession(s.history[i]))
+	}
+	return out
+}
+
+func (s *relayServer) publicFlightsHandler(w http.ResponseWriter, r *http.Request) {
+	if !s.cfg.PublicAPI || (r.Method != http.MethodGet && r.Method != http.MethodHead) {
+		http.NotFound(w, r)
+		return
+	}
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	size, _ := strconv.Atoi(r.URL.Query().Get("size"))
+	if size <= 0 {
+		size = flightsPageSize
+	}
+	size = min(size, flightsMaxPageSize)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=5")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	_ = json.NewEncoder(w).Encode(s.recentFlights(page, size))
 }

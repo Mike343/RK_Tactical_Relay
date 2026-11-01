@@ -116,7 +116,7 @@ Things to know:
 
 The relay is one worldwide room, so the page lists pilots, not separate sessions. Positions are rounded to about a kilometre and altitudes to the nearest 100 feet. The list only exists when `public_api=true`, and the Kubernetes deployment turns it on. Map tiles come from OpenStreetMap and Leaflet from unpkg, so visitors' browsers contact both.
 
-Recent flights are the last 200 sessions where a pilot flew for at least 20 seconds. Click a flight to draw its path on the map, with markers where weapons were launched, guns and countermeasures were used, hits were scored and hits were taken. The path keeps a point about every 5 seconds, thinned on very long flights. Replicas share them and a new pod copies them from its peers, so they survive a rolling update. They live in memory, so restarting every pod at once clears them.
+Recent flights are the last 200 sessions where a pilot flew for at least 20 seconds. The log is paged, and flights with a recorded path show a View on map button while the rest say No path. Click one to draw its path on the map, with markers where weapons were launched, guns and countermeasures were used, hits were scored and hits were taken. The path keeps a point about every 5 seconds, thinned on very long flights. Replicas share them and a new pod copies them from its peers, so they survive a rolling update. They live in memory, so restarting every pod at once clears them.
 
 The same host also serves the relay over TLS at `wss://rk.hangaraddons.com/ws` through the ingress. Use it for networks that block port 8787.
 
@@ -175,7 +175,7 @@ On top of the original behavior:
 - `/` takes the Companion WebSocket upgrade. As with the Node server, other unreserved paths also work, which is how `/ws` behind the ingress reaches it.
 - `/health` returns status, protocol, player count and peer count with no player details.
 - `/ready` is the same but answers 503 while draining, and for the first few seconds of a new replica so it can link up first.
-- `/api/public` is the list behind the server browser, only when `public_api=true`. `/api/public/flight/<id>` returns the path, weapon launches and hits of one recent flight.
+- `/api/public` is the list behind the server browser, only when `public_api=true`. `/api/public/flights?page=N` returns one page of recent flights (10 by default, up to 50 with `size`), and `/api/public/flight/<id>` returns the path, weapon launches and hits of one of them.
 - `/dashboard` and `/api/stats` only answer on a loopback connection. Use an SSH tunnel, a VPN or `kubectl port-forward`.
 - Port 8788 is the replica link. It only starts when `peer_dns` and `peer_token` are set. Don't expose it publicly.
 

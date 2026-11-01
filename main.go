@@ -919,6 +919,7 @@ func (s *relayServer) routes() *http.ServeMux {
 	mux.HandleFunc("/api/stats", s.statsHandler)
 	mux.HandleFunc("/api/public", s.publicHandler)
 	mux.HandleFunc("/api/public/flight/", s.publicFlightHandler)
+	mux.HandleFunc("/api/public/flights", s.publicFlightsHandler)
 	mux.HandleFunc("/", s.wsHandler)
 	return mux
 }

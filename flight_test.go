@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -131,5 +132,30 @@ func TestFlightPathWeaponsAndHitsAreRecordedAndServed(t *testing.T) {
 	s.publicFlightHandler(missing, httptest.NewRequest("GET", "/api/public/flight/nope", nil))
 	if missing.Code != 404 {
 		t.Errorf("an unknown flight should be a 404, got %d", missing.Code)
+	}
+}
+
+func TestFlightsArePaged(t *testing.T) {
+	s := newRelay(defaultConfig())
+	s.cfg.PublicAPI = true
+	for i := 0; i < 23; i++ {
+		s.mergeHistory([]sessionRecord{{Name: fmt.Sprintf("P%02d", i), Started: int64(i + 1), Seconds: 60}})
+	}
+	first := s.recentFlights(1, 10)
+	if first.Total != 23 || first.Pages != 3 || len(first.Flights) != 10 || first.Flights[0].Name != "P22" {
+		t.Fatalf("first page %+v", first)
+	}
+	last := s.recentFlights(3, 10)
+	if len(last.Flights) != 3 || last.Flights[2].Name != "P00" {
+		t.Fatalf("last page %+v", last)
+	}
+	if beyond := s.recentFlights(99, 10); beyond.Page != 3 {
+		t.Fatalf("a page past the end should clamp, got %d", beyond.Page)
+	}
+	rec := httptest.NewRecorder()
+	s.publicFlightsHandler(rec, httptest.NewRequest("GET", "/api/public/flights?page=2&size=500", nil))
+	var got publicFlightPage
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil || got.Size != flightsMaxPageSize || got.Page != 1 {
+		t.Fatalf("size should be capped and the page clamped: %v %+v", err, got)
 	}
 }
