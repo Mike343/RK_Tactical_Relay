@@ -1588,15 +1588,23 @@ class RKTacticalPanel extends RKTacticalPanelBase {
 
     selectTeam(team) {
         if (this.currentPage !== 2 || (team !== 1 && team !== 2)) { return; }
-        if(this.getLvar("RK_TAC_TEAM",0)!==0){this.updateTeamUi();return;}
-        this.setLvar("RK_TAC_TEAM_REQUEST",team);
-        this.setCommandStatus((team===1?"RED / KBAB":"BLUE / KNFL")+" | LOCKED UNTIL NEW FLIGHT");
+        var active=Math.floor(this.getLvar("RK_TAC_TEAM",0));
+        var used=this.getLvar("RK_TAC_TEAM_USED",0)!==0;
+        if(active===team){
+            this.setLvar("RK_TAC_TEAM_REQUEST",-1);
+            this.setCommandStatus("AFFILIATION ENDED | RESELECT LOCKED UNTIL NEW FLIGHT");
+        }else if(active===0 && !used){
+            this.setLvar("RK_TAC_TEAM_REQUEST",team);
+            this.setCommandStatus((team===1?"RED / KBAB":"BLUE / KNFL")+" | LOCKED UNTIL NEW FLIGHT");
+        }
+        this.updateTeamUi();
     }
     updateTeamUi() {
         this.team=Math.floor(this.getLvar("RK_TAC_TEAM",0));
+        var used=this.getLvar("RK_TAC_TEAM_USED",0)!==0;
         var red=this.querySelector("#TACTeamRed"),blue=this.querySelector("#TACTeamBlue");
-        if(red){red.checked=this.team===1;red.disabled=this.team!==0;}
-        if(blue){blue.checked=this.team===2;blue.disabled=this.team!==0;}
+        if(red){red.checked=this.team===1;red.disabled=used && this.team!==1;}
+        if(blue){blue.checked=this.team===2;blue.disabled=used && this.team!==2;}
         var ground=this.querySelector("#TACGroundButton");if(ground)ground.disabled=this.team===0;
         var strike=this.querySelector("#TACGroundStrike");if(strike)strike.style.display=this.team===2?"block":"none";
         var swarm=this.querySelector("#TACSwarmButton");if(swarm)swarm.style.display=this.team===1?"flex":"none";

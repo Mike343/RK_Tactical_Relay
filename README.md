@@ -21,7 +21,7 @@ It isn't the original August 25 source and it isn't proven to be byte for byte i
 - `resilience.go`: panic recovery, connection limits, readiness and draining.
 - `web/` and `Dockerfile.web`: the server browser page and its nginx image.
 - `companion/`: the Windows Companion app. `companion/tests/` has a network test that runs two Companions against a relay.
-- `panel/`: the RK Tactical Panel, the MSFS package that runs in the simulator. Its large assets use Git LFS.
+- `panel/`: the RK Tactical Panel, the MSFS package that runs in the simulator, one for MSFS 2024 (`-24`) and one for MSFS 2020 (`-20`). Its large assets use Git LFS.
 - `tools/`: scripts that keep the panel, the bundled Companion and the Companion in step, and build the addon files.
 - `Dockerfile`, `deploy/k8s/`, `deploy.ps1` and `RUNBOOK.md`: containers, Kubernetes and deployment.
 - `reference/`: the original Node servers and the Companion header. I keep them for auditing and they aren't needed to build.

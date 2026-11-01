@@ -3,42 +3,42 @@
                     {
                         "path":  "bglindex.bout",
                         "size":  604,
-                        "date":  134352747840017058
+                        "date":  134370711780017058
                     },
                     {
                         "path":  "contentinfo/rk-tactical-panel-24/contenthistory.json",
                         "size":  59,
-                        "date":  134352747840000000
+                        "date":  134370711780000000
                     },
                     {
                         "path":  "copy/tactical companion.zip",
                         "size":  6596004,
-                        "date":  134378825270304150
+                        "date":  134378825345177173
                     },
                     {
                         "path":  "html_ui/icons/toolbar/icon_toolbar_rk_tactical_panel.svg",
                         "size":  920,
-                        "date":  134369763350000000
+                        "date":  134379430380000000
                     },
                     {
                         "path":  "html_ui/ingamepanels/tacticalpanel/tacticalpanel.css",
                         "size":  11411,
-                        "date":  134369763350000000
+                        "date":  134379430380000000
                     },
                     {
                         "path":  "html_ui/ingamepanels/tacticalpanel/tacticalpanel.html",
                         "size":  9004,
-                        "date":  134369763350000000
+                        "date":  134379430380000000
                     },
                     {
                         "path":  "html_ui/ingamepanels/tacticalpanel/tacticalpanel.js",
-                        "size":  270331,
-                        "date":  134369763350000000
+                        "size":  270704,
+                        "date":  134379430380000000
                     },
                     {
                         "path":  "html_ui/textures/menu/toolbar/icon_toolbar_rk_tactical_panel.svg",
                         "size":  920,
-                        "date":  134369763350000000
+                        "date":  134379430380000000
                     },
                     {
                         "path":  "ingamepanels/tacticalpanel.spb",
@@ -96,19 +96,24 @@
                         "date":  134361095740000007
                     },
                     {
+                        "path":  "modules/build_2024_wasm_here.txt",
+                        "size":  363,
+                        "date":  134379597470000000
+                    },
+                    {
                         "path":  "modules/readme_build_wasm_here.txt",
                         "size":  11842,
-                        "date":  134369763880000000
+                        "date":  134379597470000000
                     },
                     {
                         "path":  "modules/rktacticalspawner.wasm",
-                        "size":  15613149,
-                        "date":  134369763880000000
+                        "size":  15618780,
+                        "date":  134379597470000000
                     },
                     {
                         "path":  "scenery/combat-towers/three towers/three towers.bgl",
                         "size":  1207,
-                        "date":  134352747840000006
+                        "date":  134370711780000006
                     },
                     {
                         "path":  "simobjects/airplanes/b21/ai.cfg",

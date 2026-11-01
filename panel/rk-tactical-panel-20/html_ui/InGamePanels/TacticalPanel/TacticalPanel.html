@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/SCSS/common.css" />
+    <link rel="stylesheet" href="TacticalPanel.css" />
+
+    <script type="text/javascript" src="/JS/coherent.js"></script>
+    <script type="text/javascript" src="/JS/common.js"></script>
+    <script type="text/javascript" src="/JS/dataStorage.js"></script>
+    <script type="text/javascript" src="/JS/buttons.js"></script>
+    <script type="text/javascript" src="/JS/simvar.js"></script>
+    <script type="text/javascript" src="/JS/Services/ToolBarPanels.js"></script>
+    <script type="text/javascript" src="/Pages/VCockpit/Instruments/Shared/BaseInstrument.js"></script>
+
+    <link rel="import" href="/templates/NewPushButton/NewPushButton.html" />
+    <link rel="import" href="/templates/ToggleButton/toggleButton.html" />
+    <link rel="import" href="/templates/tabMenu/tabMenu.html" />
+    <link rel="import" href="/templates/ingameUi/ingameUi.html" />
+    <link rel="import" href="/templates/ingameUiHeader/ingameUiHeader.html" />
+    <link rel="import" href="/templates/NewListButton/NewListButton.html" />
+
+    <script type="text/javascript" src="TacticalPanel.js"></script>
+</head>
+<body class="border-box">
+    <ingamepanel-rk-tactical-panel>
+        <ingame-ui id="RKTacticalPanel"
+                   panel-id="PANEL_RK_TACTICAL_PANEL"
+                   title=""
+                   class="ingameUiFrame panelInvisible"
+                   content-fit="true"
+                   min-width="300"
+                   min-height="420">
+
+            <div id="TACRoot">
+                <div id="TACSatelliteLayer" aria-hidden="true"></div>
+                <canvas id="TACCanvas"></canvas>
+
+                <div id="TACRangeBar" class="tac-range-bar">
+                    <button type="button" class="tac-range-button selected" data-range-index="0">1/4MI</button>
+                    <button type="button" class="tac-range-button" data-range-index="1">1MI</button>
+                    <button type="button" class="tac-range-button" data-range-index="2">5MI</button>
+                    <button type="button" class="tac-range-button" data-range-index="3">10MI</button>
+                    <button type="button" class="tac-range-button" data-range-index="4">50MI</button>
+                    <button type="button" class="tac-range-button" data-range-index="5">100MI</button>
+                    <button type="button" class="tac-range-button" data-range-index="6">500MI</button>
+                    <button type="button" id="TACFollowButton" class="tac-range-button tac-follow-button selected">SLEW</button>
+                    <button type="button" id="TACOrientationButton" class="tac-range-button tac-orientation-button selected">FWD UP</button>
+                    <button type="button" id="TACBasemapButton" class="tac-range-button tac-basemap-button selected">SAT</button>
+                    <span id="TACRangeStatus" class="tac-hidden-status">SAT FWD UP 1/4MI</span>
+                </div>
+
+                <div id="TACSpawnPanel" class="tac-spawn-panel" aria-label="Spawn controls">
+                    <div class="tac-menu-heading">SPAWN</div>
+                    <button type="button" id="TACAssetsButton" class="tac-menu-row tac-menu-action tac-page-1-only">
+                        <span>Assets</span><span class="tac-menu-count"></span>
+                    </button>
+                    <button type="button" id="TACAim120Button" class="tac-menu-row tac-menu-action tac-weapon-button" aria-pressed="false">
+                        <span>AIM120</span><span id="TACAim120Count" class="tac-menu-count">4</span>
+                    </button>
+                    <button type="button" id="TACAim9Button" class="tac-menu-row tac-menu-action tac-weapon-button" aria-pressed="false">
+                        <span>AIM9</span><span id="TACAim9Count" class="tac-menu-count">4</span>
+                    </button>
+                    <button type="button" id="TACTracersButton" class="tac-menu-row tac-menu-action tac-weapon-button" aria-pressed="false">
+                        <span>Tracers</span><span id="TACTracerCount" class="tac-menu-count">20</span>
+                    </button>
+                    <button type="button" id="TACChaffButton" class="tac-menu-row tac-menu-action tac-weapon-button tac-page-2-only" aria-pressed="false">
+                        <span>Chaff</span><span id="TACChaffCount" class="tac-menu-count">20</span>
+                    </button>
+                    <button type="button" id="TACFlaresButton" class="tac-menu-row tac-menu-action tac-weapon-button tac-page-2-only" aria-pressed="false">
+                        <span>Flares</span><span id="TACFlaresCount" class="tac-menu-count">20</span>
+                    </button>
+                    <button type="button" id="TACGroundButton" class="tac-page-2-only tac-menu-row tac-menu-action tac-weapon-button" aria-pressed="false" aria-expanded="false" aria-controls="TACGroundChoices">
+                        <span>Ground <span id="TACIpIndicator" class="tac-ip-indicator" style="display:none" aria-label="IP target designated">&#9679;</span></span><span id="TACGroundCount" class="tac-menu-count">&#9662;</span>
+                    </button>
+                    <div id="TACGroundChoices" class="tac-ground-choices" role="group" aria-label="Ground mode for this sortie">
+                        <button type="button" id="TACGroundLead">Lead crosshair</button>
+                        <button type="button" id="TACGroundInsertion">Insertion point <span id="TACIpChoiceIndicator" class="tac-ip-indicator" style="display:none">&#9679;</span></button>
+                        <button type="button" id="TACGroundClearIp" disabled>Clear IP target</button>
+                        <button type="button" id="TACGroundHarm">HARM</button>
+                        <button type="button" id="TACGroundStrike">Raider</button>
+                        <button type="button" id="TACSwarmButton"><span>Swarm</span><span id="TACSwarmCount" class="tac-menu-count">20</span></button>
+                        <button type="button" id="TACGroundCancel">Back</button>
+                    </div>
+                    <div class="tac-menu-spacer" aria-hidden="true"></div>
+                    <button type="button" id="TACCalibrationButton" class="tac-menu-row tac-menu-action tac-calibration-button" aria-pressed="false">
+                        <span id="TACCalibrationLabel">Calibration</span><span id="TACCalibrationIndicator" class="tac-calibration-indicator" aria-label="Not calibrated">&#9675;</span>
+                    </button>
+                    <button type="button" id="TACClearAllButton" class="tac-menu-row tac-menu-action tac-menu-clear tac-page-1-only">
+                        <span>Clear All</span><span class="tac-menu-count"></span>
+                    </button>
+                    <button type="button" id="TACAggressorButton" class="tac-menu-row tac-menu-action tac-menu-aggressor tac-page-1-only">
+                        <span>Aggressor</span><span class="tac-menu-count"></span>
+                    </button>
+
+                    <div id="TACNetworkStatus" class="tac-network-status tac-page-2-only">COMPANION OFFLINE</div>
+                    <div id="TACInputStatus" class="tac-input-status">INPUT READY</div>
+                    <div class="tac-team-choice tac-page-2-only" role="group" aria-label="Side for this flight">
+                        <input type="checkbox" id="TACTeamRed" class="tac-team-red" aria-label="Red — KBAB" title="Red — KBAB; locked until a new flight" />
+                        <input type="checkbox" id="TACTeamBlue" class="tac-team-blue" aria-label="Blue — KNFL" title="Blue — KNFL; locked until a new flight" />
+                    </div>
+                </div>
+
+                <div id="TACReadout" class="tac-readout">
+                    AGL -- FT ALT -- FT HDG ---&deg; GS -- KTS
+                </div>
+
+                <div id="TACCompanionNotice" class="tac-companion-notice tac-page-2-only" role="status" aria-live="polite">
+                    <div id="TACCompanionNoticeTitle" class="tac-companion-notice-title">TACTICAL COMPANION NOT RUNNING</div>
+                    <div id="TACCompanionNoticeDetail" class="tac-companion-notice-path">START RKTacticalCompanion.exe</div>
+                </div>
+
+                <button type="button" id="TACPageButton" class="tac-page-button" aria-label="Open page 2" title="Page 1 — click for page 2">pg 1</button>
+
+                <!-- Retained for diagnostics and command state, intentionally hidden in this layout. -->
+                <div id="TACWasmStatus" class="tac-hidden-status">SPAWNER WAIT</div>
+                <div id="TACCommandStatus" class="tac-hidden-status">READY</div>
+                <!-- Revision 6C uses visual-only missile warnings drawn
+                     directly on the tactical canvas. -->
+            </div>
+        </ingame-ui>
+    </ingamepanel-rk-tactical-panel>
+</body>
+</html>

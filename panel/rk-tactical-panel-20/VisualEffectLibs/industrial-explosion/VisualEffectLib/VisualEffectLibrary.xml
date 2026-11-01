@@ -1,0 +1,23 @@
+<VisualEffectLibrary Version="1.0.0">
+	<VisualEffect File="2A38"/>
+	<VisualEffect File="Flare"/>
+	<VisualEffect File="Explosion"/>
+	<VisualEffect File="tracer"/>
+	<VisualEffect File="Big_Bomb"/>
+	<VisualEffect File="Chaff"/>
+	<VisualEffect File="flash"/>
+	<VisualEffect File="MissileFlame"/>
+	<VisualEffect File="AssetFire24"/>
+	<VisualEffect File="FireRemnants"/>
+	<VisualEffect File="Industrial Explosion"/>
+	<VisualEffect File="RK_Patriot_White_Exhaust"/>
+	<VisualEffect File="RKAircraftFire"/>
+	<VisualEffect File="MissileTrail"/>
+	<VisualEffect File="RocketBlast"/>
+	<VisualEffect File="Vulcan"/>
+	<VisualEffect File="AssetFire"/>
+	<VisualEffect File="ZolfagharExplosion"/>
+	<VisualEffect File="TacticalImpact"/>
+	<VisualEffect File="FireExtinguished"/>
+</VisualEffectLibrary>
+

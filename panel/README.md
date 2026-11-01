@@ -1,6 +1,6 @@
 # RK Tactical Panel
 
-This is the in sim half of RK Tactical, the MSFS 2024 package in `rk-tactical-panel-24/`. It was created by `=rk=`, who is happy for it to be hosted here. Copy the folder into the MSFS Community folder to use it.
+This is the in sim half of RK Tactical, the MSFS packages `rk-tactical-panel-24/` for MSFS 2024 and `rk-tactical-panel-20/` for MSFS 2020. The two share the same panel code and differ in how textures, models and the WASM are built (2020 uses DDS textures, 2024 uses KTX2). It was created by `=rk=`, who is happy for it to be hosted here. Copy the folder into the MSFS Community folder to use it.
 
 It holds the toolbar panel (`html_ui/InGamePanels/TacticalPanel`), the WASM module (`modules/RKTacticalSpawner.wasm`), and all the SimObjects, effects and scenery the panel spawns: AIM-120 and AIM-9 missiles, flares and chaff, a HARM, bombs, tracers, ground vehicles, air defense and more. It also carries a copy of the Companion in `copy/Tactical Companion.zip`.
 
@@ -19,7 +19,7 @@ MSFS reads `layout.json` to know which files are in the package, with their size
 .\tools\Update-PanelLayout.ps1
 ```
 
-That also fixes `total_package_size` in `manifest.json`. Then run the compatibility check:
+It defaults to the 2024 package. Pass `-Panel panel/rk-tactical-panel-20` for 2020. It also fixes `total_package_size` in `manifest.json` where there is one. Then run the compatibility check:
 
 ```powershell
 .\tools\Check-PanelCompatibility.ps1

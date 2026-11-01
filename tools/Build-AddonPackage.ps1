@@ -8,23 +8,28 @@ if (-not (Test-Path $seven)) { throw "7-Zip is needed to zip the panel (it is ov
 
 if (-not $SkipCompanionBuild) { & (Join-Path $repo "companion\Release-Companion.ps1") }
 & (Join-Path $PSScriptRoot "Update-BundledCompanion.ps1")
-$global:LASTEXITCODE = 0
-& (Join-Path $PSScriptRoot "Check-PanelCompatibility.ps1")
-if ($LASTEXITCODE -ne 0) { throw "The compatibility check failed" }
+$panels = @("rk-tactical-panel-24", "rk-tactical-panel-20")
+foreach ($name in $panels) {
+    $global:LASTEXITCODE = 0
+    & (Join-Path $PSScriptRoot "Check-PanelCompatibility.ps1") -Panel (Join-Path $repo "panel\$name")
+    if ($LASTEXITCODE -ne 0) { throw "The compatibility check failed for $name" }
+}
 
-$panelRoot = Join-Path $repo "panel\rk-tactical-panel-24"
-$version = (Get-Content (Join-Path $panelRoot "manifest.json") -Raw | ConvertFrom-Json).package_version
 $companionVersion = [regex]::Match((Get-Content (Join-Path $repo "companion\src\Version.h") -Raw), 'RK_COMPANION_VERSION L"([^"]+)"').Groups[1].Value
 
 $out = Join-Path $repo "dist\addon"
 Remove-Item $out -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $out | Out-Null
 
-$panelZip = Join-Path $out "rk-tactical-panel-24-$version.zip"
-Push-Location (Split-Path $panelRoot -Parent)
-& $seven a -tzip -mx=3 $panelZip "rk-tactical-panel-24" | Out-Null
-Pop-Location
-if (-not (Test-Path $panelZip)) { throw "Zipping the panel failed" }
+foreach ($name in $panels) {
+    $panelRoot = Join-Path $repo "panel\$name"
+    $version = (Get-Content (Join-Path $panelRoot "manifest.json") -Raw | ConvertFrom-Json).package_version
+    $panelZip = Join-Path $out "$name-$version.zip"
+    Push-Location (Split-Path $panelRoot -Parent)
+    & $seven a -tzip -mx=3 $panelZip $name | Out-Null
+    Pop-Location
+    if (-not (Test-Path $panelZip)) { throw "Zipping $name failed" }
+}
 
 Copy-Item (Join-Path $repo "companion\dist\RKTacticalCompanion-$companionVersion.zip") $out
 Copy-Item (Join-Path $repo "companion\dist\RKTacticalCompanion-$companionVersion.zip.sha256") $out

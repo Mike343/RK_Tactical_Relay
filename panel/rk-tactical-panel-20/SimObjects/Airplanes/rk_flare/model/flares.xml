@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModelInfo version="1.1" guid="{7be639c9-bae2-4594-aacd-dcb2a374607e}">
+	<LODS>
+		<LOD minSize="0" ModelFile="flares.gltf"/>
+	</LODS>
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\Visibility.xml"/>
+		<Include ModelBehaviorFile="Asobo\Generic\FX.xml"/>
+		<Component ID="Burst" Node="EffectCenter">
+			<UseTemplate Name="ASOBO_GT_Anim">
+				<ANIM_NAME>Burst</ANIM_NAME>
+				<ANIM_CODE>1</ANIM_CODE>
+				<ANIM_LENGTH>100</ANIM_LENGTH>
+				<ANIM_LAG>50</ANIM_LAG>
+				<ANIM_WRAP>0</ANIM_WRAP>
+				<ANIM_DELTA>1</ANIM_DELTA>
+			</UseTemplate>
+		</Component>
+		<Component ID="Flare0" Node="effector0">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{954143EA-A3A9-49B9-83DD-3BD1488207C1}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="FlareTrail0" Node="effector0">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{E524E27D-958B-4F5A-9CAB-89EE20848DF9}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="Flare1" Node="effector1">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{954143EA-A3A9-49B9-83DD-3BD1488207C1}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="FlareTrail1" Node="effector1">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{E524E27D-958B-4F5A-9CAB-89EE20848DF9}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="Flare2" Node="effector2">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{954143EA-A3A9-49B9-83DD-3BD1488207C1}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="FlareTrail2" Node="effector2">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{E524E27D-958B-4F5A-9CAB-89EE20848DF9}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="Flare3" Node="effector3">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{954143EA-A3A9-49B9-83DD-3BD1488207C1}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="FlareTrail3" Node="effector3">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{E524E27D-958B-4F5A-9CAB-89EE20848DF9}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="Flare4" Node="effector4">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{954143EA-A3A9-49B9-83DD-3BD1488207C1}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="FlareTrail4" Node="effector4">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{E524E27D-958B-4F5A-9CAB-89EE20848DF9}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="Flare5" Node="effector5">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{954143EA-A3A9-49B9-83DD-3BD1488207C1}</FX_GUID>
+			</UseTemplate>
+		</Component>
+		<Component ID="FlareTrail5" Node="effector5">
+			<UseTemplate Name="ASOBO_GT_FX">
+				<FX_CODE>1</FX_CODE>
+				<FX_GUID>{E524E27D-958B-4F5A-9CAB-89EE20848DF9}</FX_GUID>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
+</ModelInfo>
+

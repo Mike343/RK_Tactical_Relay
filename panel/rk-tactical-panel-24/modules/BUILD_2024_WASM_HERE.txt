@@ -1,0 +1,9 @@
+MSFS 2024 STAGING DIRECTORY - REVISION 7B
+
+RKTacticalSpawner.sln writes the verified MSFS 2024 module here as:
+
+  RKTacticalSpawner.wasm
+
+The 2024 package definition reads only this directory. The MSFS 2020 build
+cannot overwrite it. Rebuild RKTacticalSpawner.sln before packaging revision
+7B; an earlier WASM does not contain the Cram spawn/tracking controller.

@@ -1,0 +1,21 @@
+MSFS 2020 STAGING DIRECTORY - REVISION 7B
+
+RKTacticalSpawner2020.sln writes the verified MSFS 2020 module here as:
+
+  RKTacticalSpawner.wasm
+
+The 2020 package definition reads only this directory. The MSFS 2024 build
+cannot overwrite it.
+
+The Visual Studio post-build check fails if the module imports either of these
+MSFS 2024-only functions:
+
+  SimConnect_AICreateNonATCAircraft_EX1
+  SimConnect_EnumerateSimObjectsAndLiveries
+
+Node.js must be installed for the post-build verification. It is already
+required for the included multiplayer relay server.
+
+Revision 7B retains the MSFS 2020-only explicit Tu-95 motion controller and
+adds the shared Cram spawn/tracking controller. Rebuild
+RKTacticalSpawner2020.sln before building the MSFS 2020 package.

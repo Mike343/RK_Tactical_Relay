@@ -32,11 +32,18 @@ foreach ($entry in $layout) {
     if ((Get-Item $path).Length -ne $entry.size) { $bad++ }
 }
 Check ($bad -eq 0) "layout.json matches the files on disk ($bad differ, run tools\Update-PanelLayout.ps1 if not)"
-$manifestTotal = [long](Get-Content (Join-Path $Panel "manifest.json") -Raw | ConvertFrom-Json).total_package_size
-Check ($manifestTotal -eq ($layout | Measure-Object size -Sum).Sum) "manifest total_package_size matches layout.json"
+$manifestTotal = (Get-Content (Join-Path $Panel "manifest.json") -Raw | ConvertFrom-Json).total_package_size
+if ($manifestTotal) {
+    Check ([long]$manifestTotal -eq ($layout | Measure-Object size -Sum).Sum) "manifest total_package_size matches layout.json"
+}
 
 $version = [regex]::Match((Get-Content (Join-Path $Companion "src\Version.h") -Raw), 'RK_COMPANION_VERSION L"([^"]+)"').Groups[1].Value
 $bundle = Join-Path $Panel "copy\Tactical Companion.zip"
+if (-not (Test-Path $bundle)) {
+    if ($script:failures) { Write-Host "`n$script:failures problem(s)." -ForegroundColor Red; exit 1 }
+    Write-Host "`nThe panel and the Companion source agree (this package has no bundled Companion)."
+    exit 0
+}
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [IO.Compression.ZipFile]::OpenRead($bundle)
 try {
