@@ -91,6 +91,13 @@ footer{margin-top:22px;color:var(--mute);font-size:12px;text-align:center;line-h
 .evt{background:none;border:0}
 .evt-icon{width:26px;height:26px;border-radius:50%;background:#0a121bd9;border:1px solid var(--line);display:grid;place-items:center;font-size:14px;color:var(--amber)}
 .evt-dot{width:14px;height:14px;border-radius:50%;border:2px solid #06131f;margin:6px}
+.alerts .join{align-items:center}
+.al-controls{display:flex;flex-wrap:wrap;align-items:center;gap:14px;font-size:14px}
+.al-controls label{display:flex;align-items:center;gap:6px;color:var(--text)}
+.al-controls select{font:inherit;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+.al-controls button{padding:6px 14px}
+#toast{position:fixed;right:16px;bottom:16px;max-width:min(360px,calc(100vw - 32px));background:var(--panel2);border:1px solid var(--cyan);border-radius:12px;padding:12px 16px;color:var(--text);box-shadow:0 8px 30px #0008;transform:translateY(20px);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:2000}
+#toast.show{opacity:1;transform:none}
 </style>
 </head>
 <body>
@@ -118,6 +125,19 @@ footer{margin-top:22px;color:var(--mute);font-size:12px;text-align:center;line-h
  <div class="steps"><span><b>1</b> Open the RK Tactical Companion</span><span><b>2</b> Paste the address as <i>relay_url</i></span><span><b>3</b> Start your flight</span></div>
  <div class="steps"><span>Behind a strict firewall? Use the encrypted address <code id="wss" style="display:inline;padding:3px 8px;font-size:12px"></code></span></div>
 </section>
+
+<section class="card alerts">
+ <div class="join">
+  <div><div class="k">Flight alerts</div><div class="sub" id="al-sub" style="margin-top:2px">Get told when someone starts flying. Keep this page open in a tab and you will be alerted.</div></div>
+  <div class="al-controls">
+   <label><input type="checkbox" id="al-on"> Alert me</label>
+   <label><input type="checkbox" id="al-sound" checked> Sound</label>
+   <label>When at least <select id="al-min"><option value="1">1 pilot</option><option value="2">2 pilots</option><option value="3">3 pilots</option><option value="5">5 pilots</option></select> flying</label>
+   <button class="ghost" id="al-test">Test</button>
+  </div>
+ </div>
+</section>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <section class="layout">
  <div class="mapwrap">
@@ -385,6 +405,7 @@ function tick(){
   return r.json();
  }).then(function(d){
   pilots=d.pilots||[];
+  checkAlerts(pilots);
   setLive(d.online>0?'on':'',d.online>0?d.online+(d.online===1?' pilot':' pilots')+' online':'Server online · waiting for pilots');
   $('s-online').textContent=d.online;
   $('s-alt').innerHTML=num(pilots.reduce(function(a,p){return Math.max(a,p.alt_ft)},0))+'<small>ft</small>';
@@ -396,6 +417,66 @@ function tick(){
  });
 }
 $('filter').addEventListener('input',renderList);
+var alertCfg={on:false,sound:true,min:1};
+try{var saved=JSON.parse(localStorage.getItem('rk-alerts')||'{}');if(saved&&typeof saved==='object'){alertCfg.on=saved.on===true;alertCfg.sound=saved.sound!==false;alertCfg.min=[1,2,3,5].indexOf(saved.min)>=0?saved.min:1}}catch(e){}
+function saveAlerts(){try{localStorage.setItem('rk-alerts',JSON.stringify(alertCfg))}catch(e){}}
+var audioCtx=null,toastTimer=0,unseen=0,baseTitle=document.title,seenAt=null;
+function beep(){
+ if(!alertCfg.sound)return;
+ try{
+  audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  [660,880].forEach(function(f,i){
+   var o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime+i*0.16;
+   o.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.18,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.15);
+   o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+0.16);
+  });
+ }catch(e){}
+}
+function toast(text){
+ var t=$('toast');t.textContent=text;t.classList.add('show');
+ clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show')},9000);
+}
+function raiseAlert(title,body){
+ toast(title+(body?' · '+body:''));
+ beep();
+ if(window.Notification&&Notification.permission==='granted'){
+  try{new Notification(title,{body:body,tag:'rk-flying'})}catch(e){}
+ }
+ if(document.hidden){unseen++;document.title='('+unseen+') '+baseTitle}
+}
+function alertSub(){
+ var s=$('al-sub');
+ if(!alertCfg.on){s.textContent='Get told when someone starts flying. Keep this page open in a tab and you will be alerted.';return}
+ if(window.Notification&&Notification.permission==='granted')s.textContent='On. You will get a desktop notification, a banner and a sound while this page stays open in a tab.';
+ else if(window.Notification&&Notification.permission==='denied')s.textContent='On, but your browser blocks notifications for this site. You still get a banner, a sound and a count in the tab title.';
+ else s.textContent='On. You will get a banner, a sound and a count in the tab title while this page stays open.';
+}
+function checkAlerts(list){
+ var now=Date.now();
+ if(seenAt===null){seenAt={};list.forEach(function(p){seenAt[p.name]=now});return}
+ var fresh=list.filter(function(p){return !seenAt[p.name]||now-seenAt[p.name]>120000});
+ list.forEach(function(p){seenAt[p.name]=now});
+ if(!alertCfg.on||!fresh.length||list.length<alertCfg.min)return;
+ if(fresh.length===1)raiseAlert(fresh[0].name+' is flying',(fresh[0].aircraft||'Unknown aircraft')+' · '+list.length+(list.length===1?' pilot':' pilots')+' online');
+ else raiseAlert(fresh.length+' pilots just started flying',fresh.slice(0,4).map(function(p){return p.name}).join(', ')+(fresh.length>4?' and more':''));
+}
+$('al-on').checked=alertCfg.on;$('al-sound').checked=alertCfg.sound;$('al-min').value=String(alertCfg.min);alertSub();
+$('al-on').addEventListener('change',function(){
+ alertCfg.on=this.checked;saveAlerts();
+ if(alertCfg.on){
+  beep();
+  if(window.Notification&&Notification.permission==='default'){Notification.requestPermission().then(alertSub,alertSub)}
+ }
+ alertSub();
+});
+$('al-sound').addEventListener('change',function(){alertCfg.sound=this.checked;saveAlerts();if(this.checked)beep()});
+$('al-min').addEventListener('change',function(){alertCfg.min=parseInt(this.value,10)||1;saveAlerts()});
+$('al-test').addEventListener('click',function(){
+ if(window.Notification&&Notification.permission==='default'&&alertCfg.on)Notification.requestPermission().then(alertSub,alertSub);
+ raiseAlert('Test alert','This is what you will see when someone starts flying');
+});
+document.addEventListener('visibilitychange',function(){if(!document.hidden){unseen=0;document.title=baseTitle}});
 var flightPage=1,flightPages=1;
 function loadFlights(){
  fetch("/api/public/flights?page="+flightPage,{cache:"no-store"}).then(function(r){

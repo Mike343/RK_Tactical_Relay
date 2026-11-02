@@ -116,6 +116,8 @@ Things to know:
 
 The relay is one worldwide room, so the page lists pilots, not separate sessions. Positions are rounded to about a kilometre and altitudes to the nearest 100 feet. The list only exists when `public_api=true`, and the Kubernetes deployment turns it on. Map tiles come from OpenStreetMap and Leaflet from unpkg, so visitors' browsers contact both.
 
+Flight alerts: the page has an Alert me switch that tells a visitor when someone starts flying, with a desktop notification (if the browser allows it), an on page banner, an optional sound and a count in the tab title. It only works while the page is open in a tab, and the choice is kept in the browser. A pilot who drops and returns within two minutes does not count as a new one.
+
 Recent flights are the last 200 sessions where a pilot flew for at least 20 seconds. The log is paged, and flights with a recorded path show a View on map button while the rest say No path. Click one to draw its path on the map, with markers where weapons were launched, guns and countermeasures were used, hits were scored and hits were taken. The path keeps a point about every 5 seconds, thinned on very long flights. Replicas share them and a new pod copies them from its peers, so they survive a rolling update. They live in memory, so restarting every pod at once clears them.
 
 The same host also serves the relay over TLS at `wss://rk.hangaraddons.com/ws` through the ingress. Use it for networks that block port 8787.
