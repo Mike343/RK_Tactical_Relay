@@ -3361,7 +3361,9 @@ pollAiTrafficWasmState() {
     }
     var revision = Math.floor(Number(
         this.getLvar("RK_TAC_AI_TRAFFIC_REVISION", 0.0)) || 0);
-    if (revision === this.aiTrafficRevision) { return; }
+    var nowMs = Date.now();
+    if (revision === this.aiTrafficRevision && nowMs - Number(this.aiTrafficReadMs || 0) < 250) { return; }
+    this.aiTrafficReadMs = nowMs;
 
     var count = Math.floor(Number(
         this.getLvar("RK_TAC_AI_TRAFFIC_COUNT", 0.0)) || 0);
