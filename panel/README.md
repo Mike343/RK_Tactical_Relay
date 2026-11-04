@@ -2,7 +2,7 @@
 
 This is the in sim half of RK Tactical, the MSFS packages `rk-tactical-panel-24/` for MSFS 2024 and `rk-tactical-panel-20/` for MSFS 2020. The two share the same panel code and differ in how textures, models and the WASM are built (2020 uses DDS textures, 2024 uses KTX2). It was created by `=rk=`, who is happy for it to be hosted here. Copy the folder into the MSFS Community folder to use it.
 
-It holds the toolbar panel (`html_ui/InGamePanels/TacticalPanel`), the WASM module (`modules/RKTacticalSpawner.wasm`), and all the SimObjects, effects and scenery the panel spawns: AIM-120 and AIM-9 missiles, flares and chaff, a HARM, bombs, tracers, ground vehicles, air defense and more. It also carries a copy of the Companion in `copy/Tactical Companion.zip`.
+It holds the toolbar panel (`html_ui/InGamePanels/TacticalPanel`), the WASM module (`modules/RKTacticalSpawner.wasm`), and all the SimObjects, effects and scenery the panel spawns: AIM-120 and AIM-9 missiles, flares and chaff, a HARM, bombs, tracers, ground vehicles, air defense and more. It also carries a copy of the Companion in `copy/RKTacticalCompanion.zip`.
 
 ## What can be edited here
 
@@ -27,7 +27,7 @@ It defaults to the 2024 package. Pass `-Panel panel/rk-tactical-panel-20` for 20
 
 ## How it fits with the Companion
 
-The panel and the Companion talk through SimConnect client data areas. The names carry a version, so a mismatch means the pair won't work together. The check reads the Companion's `companion/src/Protocol.h` and confirms the WASM uses exactly the same areas:
+The panel and the Companion talk through SimConnect client data areas. The names carry a version, so a mismatch means the pair won't work together. The check reads the Companion's `companion-python/app/sim.py` and confirms the WASM uses exactly the same areas:
 
 | Data area | Direction | What it carries |
 |---|---|---|
@@ -39,7 +39,7 @@ The panel and the Companion talk through SimConnect client data areas. The names
 
 If you change a layout on one side, bump the version in the area name on both sides and rebuild both. The check will fail until they agree.
 
-The check also confirms the bundled Companion in `copy/` is the same version as `companion/src/Version.h` and points at the same relay.
+The check also confirms the bundled Companion in `copy/` is the version in `companion-python/app/companion.py` and is the exe built from that source.
 
 ## Updating the bundled Companion
 
@@ -49,7 +49,7 @@ After a new Companion release, refresh the copy inside the panel:
 .\tools\Update-BundledCompanion.ps1
 ```
 
-It repackages the newest `companion/dist/RKTacticalCompanion-*.zip`, replaces `copy/Tactical Companion.zip`, and updates `layout.json`.
+It puts `companion-python/RELEASE/RKTacticalCompanion.exe` into `copy/RKTacticalCompanion.zip` in both packages and updates their `layout.json`.
 
 ## Making a release
 
@@ -57,7 +57,7 @@ It repackages the newest `companion/dist/RKTacticalCompanion-*.zip`, replaces `c
 .\tools\Build-AddonPackage.ps1
 ```
 
-This builds the Companion, bundles it into the panel, runs the compatibility check and writes the panel zip, the Companion zip and its `.sha256` into `dist/addon`. Upload those to the addon.
+This builds the Companion (needs 64 bit Python 3.10 to 3.14), bundles it into both panels, runs the compatibility check and writes the two panel zips, the Companion zip and its `.sha256` into `dist/addon`. Upload those to the addon.
 
 ## Working with the repo
 

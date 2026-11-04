@@ -1,0 +1,32 @@
+Build a single Windows EXE
+
+1. Extract this build ZIP into a NEW folder.
+2. Double-click BUILD_APPLICATION.cmd. Use the Python you installed previously.
+3. Wait for READY TO SEND.
+4. Upload RELEASE\RKTacticalCompanion.exe.
+   If the download site requires a ZIP, upload
+   RELEASE\RK_Tactical_Companion_Windows.zip instead. It contains only the EXE.
+
+Do not send users this source/build kit or your old multi-file release folder.
+Users need only the new EXE. It includes Python, SimConnect.dll, Microsoft
+runtime libraries and audio. It generates their settings and pilot ID on use.
+Do not copy your own companion.ini or companion_id.txt into app before building.
+
+If Python cannot be found, install Python 3.12.10 (Windows 64-bit):
+https://www.python.org/ftp/python/3.12.10/python-3.12.10-amd64.exe
+Select Add python.exe to PATH and Install Now, then rerun BUILD_APPLICATION.cmd.
+
+Verification
+The build runs the existing relay tests, builds the EXE, copies ONLY that EXE
+into an empty directory, and checks embedded defaults, native DLL loading and
+audio files. It publishes output only after the checks pass. These checks do
+not replace a live MSFS test. No Windows executable was built in ChatGPT.
+Local checks cover syntax and persistent settings versus bundled resources.
+Network, SimConnect transport, combat, panel and radar logic are unchanged.
+
+Optional GitHub build (not required on your PC)
+Place this folder's contents at the top level of a companion repository,
+including .github/workflows/build-companion.yml, app, build_windows.py and
+USER_README.txt. Commit to the default branch. Under Actions, run Build
+Tactical Companion EXE. The RK-Tactical-Companion-Windows artifact includes
+the standalone EXE and the ZIP containing only that EXE.

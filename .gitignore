@@ -14,3 +14,6 @@ companion/x64/
 *.db
 *.suo
 dist/
+companion-python/.build-python/
+companion-python/RELEASE/
+__pycache__/

@@ -8,18 +8,21 @@ $layoutPath = Join-Path $Panel "layout.json"
 $manifestPath = Join-Path $Panel "manifest.json"
 
 $known = @{}
+$keepCase = $false
 foreach ($entry in (Get-Content $layoutPath -Raw | ConvertFrom-Json).content) {
-    $known[$entry.path] = $entry
+    $known[$entry.path.ToLower()] = $entry
+    if ($entry.path -cne $entry.path.ToLower()) { $keepCase = $true }
 }
 
 $content = New-Object System.Collections.Generic.List[object]
 $total = 0L
 foreach ($file in Get-ChildItem $Panel -Recurse -File | Sort-Object FullName) {
-    $relative = $file.FullName.Substring($Panel.Length + 1).Replace("\", "/").ToLower()
-    if ($relative -eq "layout.json" -or $relative -eq "manifest.json") { continue }
-    $old = $known[$relative]
+    $relative = $file.FullName.Substring($Panel.Length + 1).Replace("\", "/")
+    $key = $relative.ToLower()
+    if ($key -eq "layout.json" -or $key -eq "manifest.json") { continue }
+    $old = $known[$key]
     if ($old -and $old.size -eq $file.Length) { $date = [long]$old.date } else { $date = $file.LastWriteTimeUtc.ToFileTimeUtc() }
-    $content.Add([ordered]@{ path = $relative; size = $file.Length; date = $date })
+    $content.Add([ordered]@{ path = $(if ($keepCase) { $relative } else { $key }); size = $file.Length; date = $date })
     $total += $file.Length
 }
 
