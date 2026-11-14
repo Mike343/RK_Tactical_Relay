@@ -12,8 +12,8 @@
     },
     {
       "path": "copy/rktacticalcompanion.zip",
-      "size": 16577570,
-      "date": 134382875894673533
+      "size": 15713434,
+      "date": 134391026081082475
     },
     {
       "path": "html_ui/icons/toolbar/icon_toolbar_rk_tactical_panel.svg",
@@ -32,8 +32,8 @@
     },
     {
       "path": "html_ui/ingamepanels/tacticalpanel/tacticalpanel.js",
-      "size": 270817,
-      "date": 134380606256287398
+      "size": 272526,
+      "date": 134391011177904043
     },
     {
       "path": "html_ui/textures/menu/toolbar/icon_toolbar_rk_tactical_panel.svg",
@@ -96,19 +96,9 @@
       "date": 134361095740000007
     },
     {
-      "path": "modules/build_2024_wasm_here.txt",
-      "size": 363,
-      "date": 134379597470000000
-    },
-    {
-      "path": "modules/readme_build_wasm_here.txt",
-      "size": 11842,
-      "date": 134379597470000000
-    },
-    {
       "path": "modules/rktacticalspawner.wasm",
-      "size": 15618780,
-      "date": 134379597470000000
+      "size": 15629682,
+      "date": 134389076230000000
     },
     {
       "path": "scenery/combat-towers/three towers/three towers.bgl",
@@ -591,36 +581,6 @@
       "date": 134337015130000000
     },
     {
-      "path": "simobjects/airplanes/rk_120/model/120_lod01.bin",
-      "size": 65952,
-      "date": 133873773400262164
-    },
-    {
-      "path": "simobjects/airplanes/rk_120/model/120_lod01.gltf",
-      "size": 3351,
-      "date": 133873773400262164
-    },
-    {
-      "path": "simobjects/airplanes/rk_120/model/120_lod02.bin",
-      "size": 46992,
-      "date": 133873773400262164
-    },
-    {
-      "path": "simobjects/airplanes/rk_120/model/120_lod02.gltf",
-      "size": 3355,
-      "date": 133873773400262164
-    },
-    {
-      "path": "simobjects/airplanes/rk_120/model/120_lod03.bin",
-      "size": 5736,
-      "date": 134177264070262164
-    },
-    {
-      "path": "simobjects/airplanes/rk_120/model/120_lod03.gltf",
-      "size": 3382,
-      "date": 134177264070262164
-    },
-    {
       "path": "simobjects/airplanes/rk_120/model/120.bin",
       "size": 50556,
       "date": 134357819670262164
@@ -632,8 +592,8 @@
     },
     {
       "path": "simobjects/airplanes/rk_120/model/120.xml",
-      "size": 2453,
-      "date": 134304083860000003
+      "size": 2307,
+      "date": 134386565750000003
     },
     {
       "path": "simobjects/airplanes/rk_120/model/model.cfg",
@@ -1107,8 +1067,8 @@
     },
     {
       "path": "simobjects/airplanes/rk_harm/model/harm.xml",
-      "size": 2058,
-      "date": 134356742680000003
+      "size": 1728,
+      "date": 134389118460000003
     },
     {
       "path": "simobjects/airplanes/rk_harm/model/model.cfg",
@@ -6127,8 +6087,8 @@
     },
     {
       "path": "simobjects/misc/kbab/model/kbab.gltf",
-      "size": 58281,
-      "date": 134342170110262164
+      "size": 58220,
+      "date": 134386254420262164
     },
     {
       "path": "simobjects/misc/kbab/model/kbab.xml",

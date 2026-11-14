@@ -16,7 +16,7 @@ from audio import Audio
 from client import Client
 from sim import Sim
 
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 
 
 def read_config():

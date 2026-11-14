@@ -561,6 +561,7 @@ class RKTacticalPanel extends RKTacticalPanelBase {
             // Do not repeat the same failed drawing sequence here.
             this.renderErrors.push("frame: " + String(e && e.message || e));
         }
+        this.nudgeCanvasPresentation();
 
         if (this.renderErrors.length) {
             var detail = this.renderErrors.join(" | ");
@@ -595,6 +596,18 @@ class RKTacticalPanel extends RKTacticalPanelBase {
             }
             return false;
         }
+    }
+
+    nudgeCanvasPresentation() {
+        // Coherent presents the canvas layer only when the DOM invalidates. In
+        // Follow mode the satellite-tile transforms change every frame and carry
+        // the canvas with them; in Slew nothing in the DOM moves, so completed
+        // frames (moving contacts, hover tooltips) are never shown until a
+        // button label changes. Toggling an imperceptible opacity forces a
+        // present without affecting layout or input.
+        if (!this.canvas) { return; }
+        this.presentationToggle = !this.presentationToggle;
+        this.canvas.style.opacity = this.presentationToggle ? "1" : "0.999";
     }
 
     draw() {
@@ -1588,23 +1601,15 @@ class RKTacticalPanel extends RKTacticalPanelBase {
 
     selectTeam(team) {
         if (this.currentPage !== 2 || (team !== 1 && team !== 2)) { return; }
-        var active=Math.floor(this.getLvar("RK_TAC_TEAM",0));
-        var used=this.getLvar("RK_TAC_TEAM_USED",0)!==0;
-        if(active===team){
-            this.setLvar("RK_TAC_TEAM_REQUEST",-1);
-            this.setCommandStatus("AFFILIATION ENDED | RESELECT LOCKED UNTIL NEW FLIGHT");
-        }else if(active===0 && !used){
-            this.setLvar("RK_TAC_TEAM_REQUEST",team);
-            this.setCommandStatus((team===1?"RED / KBAB":"BLUE / KNFL")+" | LOCKED UNTIL NEW FLIGHT");
-        }
-        this.updateTeamUi();
+        if(this.getLvar("RK_TAC_TEAM",0)!==0){this.updateTeamUi();return;}
+        this.setLvar("RK_TAC_TEAM_REQUEST",team);
+        this.setCommandStatus((team===1?"RED / KBAB":"BLUE / KNFL")+" | LOCKED UNTIL NEW FLIGHT");
     }
     updateTeamUi() {
         this.team=Math.floor(this.getLvar("RK_TAC_TEAM",0));
-        var used=this.getLvar("RK_TAC_TEAM_USED",0)!==0;
         var red=this.querySelector("#TACTeamRed"),blue=this.querySelector("#TACTeamBlue");
-        if(red){red.checked=this.team===1;red.disabled=used && this.team!==1;}
-        if(blue){blue.checked=this.team===2;blue.disabled=used && this.team!==2;}
+        if(red){red.checked=this.team===1;red.disabled=this.team!==0;}
+        if(blue){blue.checked=this.team===2;blue.disabled=this.team!==0;}
         var ground=this.querySelector("#TACGroundButton");if(ground)ground.disabled=this.team===0;
         var strike=this.querySelector("#TACGroundStrike");if(strike)strike.style.display=this.team===2?"block":"none";
         var swarm=this.querySelector("#TACSwarmButton");if(swarm)swarm.style.display=this.team===1?"flex":"none";
@@ -2819,8 +2824,8 @@ distanceStatuteMiles(lat1, lon1, lat2, lon2) {
 }
 
 droneEngagementState() {
-    var aim120Available = Number(this.weaponAmmo.AIM120 || 0) > 0;
-    var aim9Available = Number(this.weaponAmmo.AIM9 || 0) > 0;
+    var aim120Available = this.selectedWeapon === "AIM120" && Number(this.weaponAmmo.AIM120 || 0) > 0;
+    var aim9Available = this.selectedWeapon === "AIM9" && Number(this.weaponAmmo.AIM9 || 0) > 0;
     if (!this.aircraft.valid || !this.droneObject) {
         return {
             distanceMiles: Infinity,
@@ -3178,6 +3183,14 @@ droneEngagementState() {
         this.pollWeaponWasmState();
         this.updateAiWeaponLockState(false);
         this.updateSpawnerStatusText(alive, status, objectCount, lastError);
+        var hitState = this.getLvar("RK_TAC_PILOT_HIT_STATE", 0);
+        if (this.lastPilotHitState !== hitState) {
+            if (hitState === 1) this.setCommandStatus("HIT | ENGINE SHUTDOWN REQUESTED");
+            if (hitState === 2) this.setCommandStatus("PILOT DOWN | RESTART AN ENGINE TO RETURN");
+            if (hitState === 3) this.setCommandStatus("ENGINE STOP UNCONFIRMED | CONTROLS ACTIVE");
+            if (hitState === 0 && this.lastPilotHitState === 2) this.setCommandStatus("PILOT ACTIVE");
+            this.lastPilotHitState = hitState;
+        }
 
         var ackSeq = this.getLvar("RK_TAC_ACK_SEQ", 0.0);
         if (!isFinite(ackSeq) || ackSeq <= 0 || ackSeq === this.wasmAckState.lastSeq) {
@@ -3332,19 +3345,25 @@ droneEngagementState() {
 
     updateNetworkStatus() {
         if (!this.networkStatusElement) { return; }
-        var trackedPeers = 0;
+        var shown = 0;
         for (var i = 0; i < this.aiTrafficContacts.length; i++) {
-            if (this.aiTrafficContacts[i].isMultiplayer) { ++trackedPeers; }
+            if (this.aiTrafficContacts[i].isMultiplayer) { ++shown; }
         }
+        // These describe accepted contacts before display filtering, not the
+        // relay's participant roster. Older WASM supplies no such count.
+        var state = this.getLvar("RK_TAC_MULTIPLAYER_DATA_STATE", 0);
+        var received = Math.max(0, Math.floor(this.getLvar("RK_TAC_MULTIPLAYER_RECEIVED_COUNT", 0)));
+        var rejected = this.getLvar("RK_TAC_MULTIPLAYER_DATA_REJECTED", 0) > 0;
         var online = this.companionAlive && this.companionRelayConnected;
         this.networkStatusElement.classList.toggle("relay-online", online);
-        this.networkStatusElement.textContent = !this.companionAlive
-            ? "COMPANION OFFLINE"
-            : (!this.companionRelayConnected
-                ? "RELAY OFFLINE"
-                : ("RELAY ONLINE | PEERS " + String(this.multiplayerPeerCount)
-                    + " | TRACKS " + String(trackedPeers)));
+        var connection = !this.companionAlive ? "COMPANION OFFLINE"
+            : (!this.companionRelayConnected ? "RELAY OFFLINE" : "RELAY ONLINE");
+        var data = state === 1 ? "RECEIVED " + received
+            : (state === 2 ? "CONTACT DATA STALE" : "WAITING FOR CONTACT DATA");
+        this.networkStatusElement.textContent = connection + " | " + data + " | SHOWN " + shown
+            + (rejected ? " | CONTACT DATA REJECTED" : "");
     }
+
 
 
 aiTrafficLvarName(slotNumber, suffix) {
@@ -3397,6 +3416,7 @@ pollAiTrafficWasmState() {
             activelyTracked:this.getLvar(this.aiTrafficLvarName(slot,"TRACKED"),1)===1,
             isAggressor: role === 1,
             isMultiplayer: role === 2,
+            defeated: role === 2 && this.getLvar(this.aiTrafficLvarName(slot,"DEFEATED"),0) > 0.5,
             isTu95: role === 3,
             isSwarm: role === 4,
             isRaider: role === 5,
@@ -4713,7 +4733,7 @@ pollWeaponWasmState() {
     }
 
     airTargetContacts() {
-        var contacts = (this.aiTrafficContacts || []).slice();
+        var contacts = (this.aiTrafficContacts || []).filter(function(c) { return !c.defeated; });
         var drone = this.droneObject;
         if (drone && Number(drone.simObjectId) > 0 && isFinite(drone.lat) && isFinite(drone.lon)) {
             var ownDrone = Object.assign({}, drone, {isLegacyDrone:true});
@@ -4760,6 +4780,7 @@ pollWeaponWasmState() {
         if (!contact || !this.aircraft || !this.aircraft.valid) {
             return { eligible: false, reason: "OWN AIRCRAFT POSITION UNAVAILABLE" };
         }
+        if(contact.defeated)return {eligible:false,reason:"PILOT DOWN"};
         if(contact.activelyTracked===false)return {eligible:false,reason:"CONTACT LOST"};
         if(contact.isMultiplayer || contact.isSwarm || contact.isRaider) {
             var side=Number(contact.team)||0;
@@ -5728,7 +5749,7 @@ drawAiTrafficSymbol(ctx, traffic, x, y, selected) {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    if(this.currentPage===2 && (traffic.team===1 || traffic.team===2)){
+    if((traffic.isMultiplayer || this.currentPage===2) && (traffic.team===1 || traffic.team===2)){
         ctx.shadowBlur=0;ctx.fillStyle=traffic.team===1?"#ff3030":"#388cff";
         ctx.beginPath();ctx.arc(5,-11,2.5,0,Math.PI*2);ctx.fill();
     }
@@ -5913,7 +5934,7 @@ drawAiTrafficSymbol(ctx, traffic, x, y, selected) {
         }
         ctx.fill();
         ctx.stroke();
-        if(this.currentPage===2 && this.team){ctx.shadowBlur=0;ctx.fillStyle=this.team===1?"#ff3030":"#388cff";ctx.beginPath();ctx.arc(6,(this.followAircraft && this.orientationMode==="fwd")?-34:-18,2.5,0,Math.PI*2);ctx.fill();}
+        if(this.team===1 || this.team===2){ctx.shadowBlur=0;ctx.fillStyle=this.team===1?"#ff3030":"#388cff";ctx.beginPath();ctx.arc(6,(this.followAircraft && this.orientationMode==="fwd")?-34:-18,2.5,0,Math.PI*2);ctx.fill();}
         ctx.restore();
     }
 

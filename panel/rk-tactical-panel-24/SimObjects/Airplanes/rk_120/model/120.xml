@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModelInfo version="1.1" guid="{81f7defd-aeaa-4a22-8176-8f30b77e11ba}">
 	<LODS>
-		<LOD minSize="20" ModelFile="120.gltf"/>
-		<LOD minSize="10" ModelFile="120_LOD01.gltf"/>
-		<LOD minSize="5" ModelFile="120_LOD02.gltf"/>
-		<LOD minSize="1" ModelFile="120_LOD03.gltf"/>
+		<LOD minSize="0" ModelFile="120.gltf"/>
 	</LODS>
 	<Behaviors>
 		<Include ModelBehaviorFile="Asobo\Generic\Animations.xml"/>

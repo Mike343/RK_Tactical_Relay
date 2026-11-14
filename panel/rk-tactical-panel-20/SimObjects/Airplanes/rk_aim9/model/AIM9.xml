@@ -3,8 +3,7 @@
 
     <LODS>
         <LOD minSize="0" ModelFile="AIM9.gltf"/>
-		
-		
+			
     </LODS>
 
     <Behaviors>
